@@ -32,21 +32,21 @@ export const register = async (req, res, next) => {
       .upsert(
         {
           id: data.user.id,
-          role: "provider"
+          role: "user"
         },
         { onConflict: "id" }
       );
 
-   if (profileError) {
-  console.error("Registration profile creation failed:", {
-    code: profileError.code,
-    message: profileError.message,
-    details: profileError.details,
-    hint: profileError.hint
-  });
+    if (profileError) {
+      console.error("Registration profile creation failed:", {
+        code: profileError.code,
+        message: profileError.message,
+        details: profileError.details,
+        hint: profileError.hint
+      });
 
-  return next(profileError);
-}
+      return next(profileError);
+    }
 
     return res.status(201).json({
       success: true,
@@ -86,6 +86,39 @@ export const login = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "Login successful",
+      data: {
+        user: {
+          id: data.user.id,
+          email: data.user.email
+        },
+        session: data.session
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+export const verifySignupOtp = async (req, res, next) => {
+  try {
+    const { email, token } = req.body;
+
+    const { data, error } = await supabaseAuth.auth.verifyOtp({
+      email,
+      token,
+      type: "signup"
+    });
+
+    if (error || !data.user) {
+      return res.status(400).json({
+        success: false,
+        error: "OTP_VERIFICATION_FAILED",
+        message: error?.message || "Unable to verify email"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
       data: {
         user: {
           id: data.user.id,

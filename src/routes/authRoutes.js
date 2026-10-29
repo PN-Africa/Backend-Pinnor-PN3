@@ -1,12 +1,15 @@
 
 import { Router } from "express";
+
 import {
   registerSchema,
   loginSchema
 } from "../validators/authValidators.js";
+
 import {
   register,
-  login
+  login,
+  verifySignupOtp
 } from "../controllers/authController.js";
 
 const router = Router();
@@ -32,5 +35,6 @@ const validateBody = (schema) => (req, res, next) => {
 
 router.post("/register", validateBody(registerSchema), register);
 router.post("/login", validateBody(loginSchema), login);
+router.post("/verify-otp", verifySignupOtp);
 
 export default router;

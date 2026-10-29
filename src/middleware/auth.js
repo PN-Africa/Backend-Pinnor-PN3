@@ -43,6 +43,55 @@ export const requireAuth = async (req, res, next) => {
   }
 };
 
+
+export const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    // No token means the patient is booking as a guest.
+    if (!authHeader) {
+      return next();
+    }
+
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        error: "UNAUTHORIZED",
+        message: "Invalid authorization header"
+      });
+    }
+
+    const token = authHeader.slice(7).trim();
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: "UNAUTHORIZED",
+        message: "Authentication token is required"
+      });
+    }
+
+    const {
+      data: { user },
+      error
+    } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return res.status(401).json({
+        success: false,
+        error: "INVALID_TOKEN",
+        message: "Invalid or expired authentication token"
+      });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 export const requireAdmin = async (req, res, next) => {
   try {
     if (!req.user?.id) {

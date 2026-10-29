@@ -1,3 +1,4 @@
+
 import {
   createBooking,
   getBookingByReference,
@@ -24,7 +25,12 @@ export const createGuestBooking = async (req, res, next) => {
       });
     }
 
-    const booking = await createBooking(validation.data);
+    const userId = req.user?.id ?? null;
+
+    const booking = await createBooking(
+      validation.data,
+      userId
+    );
 
     return res.status(201).json({
       success: true,

@@ -1,13 +1,22 @@
-import app from './app.js';
-import dotenv from 'dotenv';
-import { errorHandler } from './middleware/errorHandler.js';
 
-dotenv.config();
+import "dotenv/config";
+
+import app from "./app.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { initReminderScheduler } from "./jobs/reminderCron.js";
 
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Pinnor Healthcare Appointment API running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log(
+    `Pinnor Healthcare Appointment API running in ${
+      process.env.NODE_ENV || "development"
+    } mode on port ${PORT}`
+  );
+
+  initReminderScheduler();
 });
+
+export default server;

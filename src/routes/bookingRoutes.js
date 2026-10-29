@@ -1,3 +1,4 @@
+
 import express from "express";
 
 import {
@@ -7,21 +8,27 @@ import {
   cancelGuestBooking
 } from "../controllers/bookingController.js";
 
+import { optionalAuth } from "../middleware/auth.js";
+
 const router = express.Router();
 
 /**
  * @swagger
  * tags:
  *   name: Bookings
- *   description: Guest appointment booking
+ *   description: Guest and registered patient appointment booking
  */
 
 /**
  * @swagger
  * /api/bookings:
  *   post:
- *     summary: Create a guest appointment booking
+ *     summary: Create an appointment booking
+ *     description: Book as a guest without an access token, or as a registered user with a valid Supabase Bearer token.
  *     tags: [Bookings]
+ *     security:
+ *       - bearerAuth: []
+ *       - {}
  *     requestBody:
  *       required: true
  *       content:
@@ -46,7 +53,7 @@ const router = express.Router();
  *                 example: patient@example.com
  *               patientPhone:
  *                 type: string
- *                 example: 08012345678
+ *                 example: "08012345678"
  *               patientMessage:
  *                 type: string
  *                 example: I would like to discuss my symptoms.
@@ -55,10 +62,12 @@ const router = express.Router();
  *         description: Appointment booked successfully
  *       400:
  *         description: Validation failed
+ *       401:
+ *         description: Invalid or expired access token
  *       409:
- *         description: Appointment slot is no longer available
+ *         description: Appointment slot is unavailable
  */
-router.post("/", createGuestBooking);
+router.post("/", optionalAuth, createGuestBooking);
 
 /**
  * @swagger
@@ -95,36 +104,6 @@ router.get("/:reference", lookupGuestBooking);
  *   patch:
  *     summary: Reschedule a guest appointment
  *     tags: [Bookings]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - bookingReference
- *               - patientEmail
- *               - newSlotId
- *             properties:
- *               bookingReference:
- *                 type: string
- *                 example: PIN-A1B2C3D4
- *               patientEmail:
- *                 type: string
- *                 format: email
- *                 example: patient@example.com
- *               newSlotId:
- *                 type: string
- *                 format: uuid
- *     responses:
- *       200:
- *         description: Appointment rescheduled successfully
- *       400:
- *         description: Validation failed
- *       404:
- *         description: Booking not found
- *       409:
- *         description: New appointment slot is unavailable
  */
 router.patch("/reschedule", rescheduleGuestBooking);
 
@@ -134,32 +113,6 @@ router.patch("/reschedule", rescheduleGuestBooking);
  *   patch:
  *     summary: Cancel a guest appointment
  *     tags: [Bookings]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - bookingReference
- *               - patientEmail
- *             properties:
- *               bookingReference:
- *                 type: string
- *                 example: PIN-A1B2C3D4
- *               patientEmail:
- *                 type: string
- *                 format: email
- *                 example: patient@example.com
- *     responses:
- *       200:
- *         description: Appointment cancelled successfully
- *       400:
- *         description: Validation failed
- *       404:
- *         description: Booking not found
- *       409:
- *         description: Booking cannot be cancelled
  */
 router.patch("/cancel", cancelGuestBooking);
 

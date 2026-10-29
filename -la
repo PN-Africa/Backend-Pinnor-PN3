@@ -1,0 +1,27 @@
+[35m.env.example[m[36m:[m[32m9[m[36m:[m# Email / [1;31mResend[m
+[35m.env.example[m[36m:[m[32m10[m[36m:[m[1;31mRESEND[m_API_KEY=your-[1;31mresend[m-api-key
+[35mpackage-lock.json[m[36m:[m[32m16[m[36m:[m        "[1;31mnode-cron[m": "^4.6.0",
+[35mpackage-lock.json[m[36m:[m[32m17[m[36m:[m        "[1;31mresend[m": "^6.32.1",
+[35mpackage-lock.json[m[36m:[m[32m1197[m[36m:[m    "node_modules/[1;31mnode-cron[m": {
+[35mpackage-lock.json[m[36m:[m[32m1199[m[36m:[m      "resolved": "https://registry.npmjs.org/[1;31mnode-cron[m/-/[1;31mnode-cron[m-4.6.0.tgz",
+[35mpackage-lock.json[m[36m:[m[32m1390[m[36m:[m    "node_modules/[1;31mresend[m": {
+[35mpackage-lock.json[m[36m:[m[32m1392[m[36m:[m      "resolved": "https://registry.npmjs.org/[1;31mresend[m/-/[1;31mresend[m-6.32.1.tgz",
+[35mpackage.json[m[36m:[m[32m16[m[36m:[m    "[1;31mnode-cron[m": "^4.6.0",
+[35mpackage.json[m[36m:[m[32m17[m[36m:[m    "[1;31mresend[m": "^6.32.1",
+[35msrc/config/email.js[m[36m:[m[32m1[m[36m:[mimport { [1;31mResend[m } from '[1;31mresend[m';
+[35msrc/config/email.js[m[36m:[m[32m6[m[36m:[mexport const [1;31mresend[m = process.env.[1;31mRESEND[m_API_KEY 
+[35msrc/config/email.js[m[36m:[m[32m7[m[36m:[m  ? new [1;31mResend[m(process.env.[1;31mRESEND[m_API_KEY) 
+[35msrc/jobs/appointmentReminder.js[m[36m:[m[32m1[m[36m:[mimport cron from '[1;31mnode-cron[m';
+[35msrc/jobs/reminderCron.js[m[36m:[m[32m1[m[36m:[mimport cron from '[1;31mnode-cron[m';
+[35msrc/jobs/reminderJob.js[m[36m:[m[32m1[m[36m:[mimport cron from "[1;31mnode-cron[m";
+[35msrc/repositories/appointmentRepository.js[m[36m:[m[32m5[m[36m:[m"id, provider_id, service_id, slot_id, patient_name, patient_email, patient_phone, patient_message, appointment_date, start_time, end_time, status, booking_reference, [1;31mreminder_48hr[m, [1;31mreminder_24hr[m, created_at, updated_at";
+[35msrc/repositories/reminderRepository.js[m[36m:[m[32m29[m[36m:[m    .eq("[1;31mreminder_48hr[m", false)
+[35msrc/repositories/reminderRepository.js[m[36m:[m[32m51[m[36m:[m    .eq("[1;31mreminder_24hr[m", false)
+[35msrc/repositories/reminderRepository.js[m[36m:[m[32m66[m[36m:[m      [1;31mreminder_48hr[m: true,
+[35msrc/repositories/reminderRepository.js[m[36m:[m[32m80[m[36m:[m      [1;31mreminder_24hr[m: true,
+[35msrc/services/emailService.js[m[36m:[m[32m1[m[36m:[mimport { [1;31mResend[m } from "[1;31mresend[m";
+[35msrc/services/emailService.js[m[36m:[m[32m3[m[36m:[mconst [1;31mresend[m = new [1;31mResend[m(process.env.[1;31mRESEND[m_API_KEY);
+[35msrc/services/emailService.js[m[36m:[m[32m5[m[36m:[mexport const [1;31msendReminderEmail[m = async ({
+[35msrc/services/emailService.js[m[36m:[m[32m13[m[36m:[m  const { data, error } = await [1;31mresend[m.emails.send({
+[35msrc/services/reminderService.js[m[36m:[m[32m8[m[36m:[mimport { [1;31msendReminderEmail } from "./email[mService.js";
+[35msrc/services/reminderService.js[m[36m:[m[32m30[m[36m:[m  await [1;31msendReminderEmail[m({

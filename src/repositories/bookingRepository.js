@@ -1,3 +1,4 @@
+
 import { supabase } from "../config/supabase.js";
 
 const addBookingNames = async (booking) => {
@@ -24,27 +25,46 @@ const addBookingNames = async (booking) => {
     service_name: serviceResult.data?.name ?? null
   };
 };
+
+const throwMappedError = (errorCode, errorMap, fallbackMessage) => {
+  const result = errorMap[errorCode] ?? {
+    message: fallbackMessage,
+    statusCode: 500
+  };
+
+  const error = new Error(result.message);
+  error.statusCode = result.statusCode;
+
+  if (errorCode) {
+    error.code = errorCode;
+  }
+
+  throw error;
+};
+
 export const createBooking = async ({
   slotId,
   patientName,
   patientEmail,
   patientPhone,
-  patientMessage
+  patientMessage,
+  userId = null
 }) => {
   const { data, error } = await supabase.rpc("create_booking", {
     p_slot_id: slotId,
     p_patient_name: patientName,
     p_patient_email: patientEmail,
     p_patient_phone: patientPhone,
-    p_patient_message: patientMessage || null
+    p_patient_message: patientMessage || null,
+    p_user_id: userId
   });
 
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
 
   if (!data) {
-    throw new Error("Booking was created without returning appointment details");
+    throw new Error(
+      "Booking was created without returning appointment details"
+    );
   }
 
   return addBookingNames(data);
@@ -61,14 +81,12 @@ export const getBookingByReference = async (
     .eq("patient_email", patientEmail)
     .maybeSingle();
 
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
 
   if (!data) {
-    const err = new Error("Booking not found");
-    err.statusCode = 404;
-    throw err;
+    const error = new Error("Booking not found");
+    error.statusCode = 404;
+    throw error;
   }
 
   return addBookingNames(data);
@@ -88,58 +106,59 @@ export const rescheduleBooking = async (
     }
   );
 
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
+
+  const errorMap = {
+    APPOINTMENT_NOT_FOUND: {
+      message: "Booking not found",
+      statusCode: 404
+    },
+    APPOINTMENT_ALREADY_CANCELLED: {
+      message: "Appointment is already cancelled",
+      statusCode: 409
+    },
+    APPOINTMENT_NOT_RESCHEDULABLE: {
+      message: "This appointment cannot be rescheduled",
+      statusCode: 409
+    },
+    NEW_SLOT_UNAVAILABLE: {
+      message: "The selected slot is no longer available",
+      statusCode: 409
+    },
+    SLOT_UNAVAILABLE: {
+      message: "The selected slot is no longer available",
+      statusCode: 409
+    },
+    PAST_APPOINTMENT_SLOT: {
+      message: "Appointments cannot be rescheduled to a past slot",
+      statusCode: 409
+    }
+  };
 
   if (!data || data.success !== true) {
-    const errorMap = {
-      APPOINTMENT_NOT_FOUND: {
-        message: "Booking not found",
-        statusCode: 404
-      },
-      APPOINTMENT_ALREADY_CANCELLED: {
-        message: "Appointment is already cancelled",
-        statusCode: 409
-      },
-      APPOINTMENT_NOT_RESCHEDULABLE: {
-        message: "This appointment cannot be rescheduled",
-        statusCode: 409
-      },
-      NEW_SLOT_UNAVAILABLE: {
-        message: "The selected slot is no longer available",
-        statusCode: 409
-      },
-      SLOT_UNAVAILABLE: {
-        message: "The selected slot is no longer available",
-        statusCode: 409
-      },
-      PAST_APPOINTMENT_SLOT: {
-        message: "Appointments cannot be rescheduled to a past slot",
-        statusCode: 409
-      }
-    };
-
-    const result = errorMap[data?.error] || {
-      message: "Appointment rescheduling failed",
-      statusCode: 500
-    };
-
-    const err = new Error(result.message);
-    err.statusCode = result.statusCode;
-
-    if (data?.error) {
-      err.code = data.error;
-    }
-
-    throw err;
+    throwMappedError(
+      data?.error,
+      errorMap,
+      "Appointment rescheduling failed"
+    );
   }
 
-  return data;
+  if (!data.appointment_id) {
+    throw new Error(
+      "Rescheduling succeeded but no appointment ID was returned"
+    );
+  }
+
+  const { data: appointment, error: fetchError } = await supabase
+    .from("appointments")
+    .select("*")
+    .eq("id", data.appointment_id)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  return addBookingNames(appointment);
 };
-
-
-
 
 export const cancelBooking = async (
   bookingReference,
@@ -153,39 +172,29 @@ export const cancelBooking = async (
     }
   );
 
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
+
+  const errorMap = {
+    APPOINTMENT_NOT_FOUND: {
+      message: "Booking not found",
+      statusCode: 404
+    },
+    APPOINTMENT_ALREADY_CANCELLED: {
+      message: "Appointment is already cancelled",
+      statusCode: 409
+    },
+    APPOINTMENT_NOT_CANCELLABLE: {
+      message: "This appointment cannot be cancelled",
+      statusCode: 409
+    }
+  };
 
   if (!data || data.success !== true) {
-    const errorMap = {
-      APPOINTMENT_NOT_FOUND: {
-        message: "Booking not found",
-        statusCode: 404
-      },
-      APPOINTMENT_ALREADY_CANCELLED: {
-        message: "Appointment is already cancelled",
-        statusCode: 409
-      },
-      APPOINTMENT_NOT_CANCELLABLE: {
-        message: "This appointment cannot be cancelled",
-        statusCode: 409
-      }
-    };
-
-    const result = errorMap[data?.error] || {
-      message: "Appointment cancellation failed",
-      statusCode: 500
-    };
-
-    const err = new Error(result.message);
-    err.statusCode = result.statusCode;
-
-    if (errorMap[data?.error]) {
-      err.code = data.error;
-    }
-
-    throw err;
+    throwMappedError(
+      data?.error,
+      errorMap,
+      "Appointment cancellation failed"
+    );
   }
 
   return data;
