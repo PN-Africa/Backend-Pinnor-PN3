@@ -13,7 +13,7 @@ import {
   logout
 } from "../controllers/authController.js";
 
-import { requireAuth } from "../middleware/requireAuth.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
