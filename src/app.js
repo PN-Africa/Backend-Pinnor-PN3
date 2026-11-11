@@ -17,7 +17,13 @@ const app = express();
 
 // Global middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: [
+    "https://pinnor-frontend.vercel.app"
+  ],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(morgan("dev"));
 app.use(express.json());
 
