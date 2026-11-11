@@ -9,8 +9,11 @@ import {
 import {
   register,
   login,
-  verifySignupOtp
+  verifySignupOtp,
+  logout
 } from "../controllers/authController.js";
+
+import { requireAuth } from "../middleware/requireAuth.js";
 
 const router = Router();
 
@@ -36,5 +39,6 @@ const validateBody = (schema) => (req, res, next) => {
 router.post("/register", validateBody(registerSchema), register);
 router.post("/login", validateBody(loginSchema), login);
 router.post("/verify-otp", verifySignupOtp);
+router.post("/logout", requireAuth, logout);
 
 export default router;

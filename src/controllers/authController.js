@@ -98,6 +98,7 @@ export const login = async (req, res, next) => {
     next(error);
   }
 };
+
 export const verifySignupOtp = async (req, res, next) => {
   try {
     const { email, token } = req.body;
@@ -126,6 +127,53 @@ export const verifySignupOtp = async (req, res, next) => {
         },
         session: data.session
       }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Logout
+export const logout = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader?.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        error: "UNAUTHORIZED",
+        message: "Authentication token is required"
+      });
+    }
+
+    const token = authHeader.slice(7).trim();
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: "UNAUTHORIZED",
+        message: "Authentication token is required"
+      });
+    }
+
+    const { error } = await supabase.auth.admin.signOut(
+      token,
+      "local"
+    );
+
+    if (error) {
+      console.error("Logout failed:", error.message);
+
+      return res.status(400).json({
+        success: false,
+        error: "LOGOUT_FAILED",
+        message: "Unable to complete logout"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Logout successful"
     });
   } catch (error) {
     next(error);
