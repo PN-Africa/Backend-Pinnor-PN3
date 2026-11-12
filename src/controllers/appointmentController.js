@@ -1,4 +1,7 @@
 import {
+  sendCancellationConfirmationEmail
+} from "../config/email.js";
+import {
 createBooking,
 getAppointments,
 getAppointmentById,
@@ -55,18 +58,26 @@ next(error);
 };
 
 export const cancelAppointmentController = async (req, res, next) => {
-try {
-const appointment = await cancelAppointment(req.params.id);
+  try {
+    const appointment = await cancelAppointment(req.params.id);
 
-res.status(200).json({
-  success: true,
-  message: "Appointment cancelled successfully",
-  data: appointment
-});
+    try {
+      await sendCancellationConfirmationEmail(appointment);
+    } catch (emailError) {
+      console.error(
+        "Cancellation email failed:",
+        emailError.message
+      );
+    }
 
-} catch (error) {
-next(error);
-}
+    res.status(200).json({
+      success: true,
+      message: "Appointment cancelled successfully",
+      data: appointment
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const completeAppointmentController = async (req, res, next) => {
