@@ -9,6 +9,7 @@ import {
 import {
   register,
   login,
+  getCurrentUser,
   verifySignupOtp,
   logout
 } from "../controllers/authController.js";
@@ -38,6 +39,7 @@ const validateBody = (schema) => (req, res, next) => {
 
 router.post("/register", validateBody(registerSchema), register);
 router.post("/login", validateBody(loginSchema), login);
+router.get("/me", requireAuth, getCurrentUser);
 router.post("/verify-otp", verifySignupOtp);
 router.post("/logout", requireAuth, logout);
 

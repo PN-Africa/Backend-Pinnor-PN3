@@ -27,27 +27,6 @@ export const register = async (req, res, next) => {
       });
     }
 
-    const { error: profileError } = await supabase
-      .from("user_profiles")
-      .upsert(
-        {
-          id: data.user.id,
-          role: "user"
-        },
-        { onConflict: "id" }
-      );
-
-    if (profileError) {
-      console.error("Registration profile creation failed:", {
-        code: profileError.code,
-        message: profileError.message,
-        details: profileError.details,
-        hint: profileError.hint
-      });
-
-      return next(profileError);
-    }
-
     return res.status(201).json({
       success: true,
       message: data.session
@@ -83,15 +62,73 @@ export const login = async (req, res, next) => {
       });
     }
 
+    const { data: profile, error: profileError } = await supabase
+      .from("user_profiles")
+      .select("role, full_name, email, avatar_url")
+      .eq("id", data.user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      return next(profileError);
+    }
+
+    if (!profile || !profile.role) {
+      return res.status(403).json({
+        success: false,
+        error: "PROFILE_NOT_FOUND",
+        message: "User profile or role not found"
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: "Login successful",
       data: {
         user: {
           id: data.user.id,
-          email: data.user.email
+          email: profile.email || data.user.email,
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url,
+          role: profile.role
         },
         session: data.session
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCurrentUser = async (req, res, next) => {
+  try {
+    const { data: profile, error } = await supabase
+      .from("user_profiles")
+      .select("role, full_name, email, avatar_url")
+      .eq("id", req.user.id)
+      .maybeSingle();
+
+    if (error) {
+      return next(error);
+    }
+
+    if (!profile || !profile.role) {
+      return res.status(404).json({
+        success: false,
+        error: "PROFILE_NOT_FOUND",
+        message: "User profile or role not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        user: {
+          id: req.user.id,
+          email: profile.email || req.user.email,
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url,
+          role: profile.role
+        }
       }
     });
   } catch (error) {
@@ -133,7 +170,6 @@ export const verifySignupOtp = async (req, res, next) => {
   }
 };
 
-// Logout
 export const logout = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
