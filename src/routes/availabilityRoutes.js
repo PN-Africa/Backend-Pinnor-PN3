@@ -1,3 +1,4 @@
+
 import express from "express";
 
 import {
@@ -70,16 +71,53 @@ router.get(
  * /api/availability:
  *   post:
  *     summary: Create availability slot
+ *     description: Creates a new appointment availability slot. The end time must be later than the start time.
  *     tags: [Availability]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - providerId
+ *               - serviceId
+ *               - startTime
+ *               - endTime
+ *             properties:
+ *               providerId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: UUID of the healthcare provider
+ *                 example: "d3237332-e423-4994-bbc2-3ba4b3629765"
+ *               serviceId:
+ *                 type: string
+ *                 format: uuid
+ *                 description: UUID of the healthcare service
+ *                 example: "1d056baf-25c9-41b8-bb75-f73b7a47a9fe"
+ *               startTime:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Availability start time in ISO 8601 format
+ *                 example: "2026-11-20T09:00:00.000Z"
+ *               endTime:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Availability end time in ISO 8601 format; must be later than startTime
+ *                 example: "2026-11-20T10:00:00.000Z"
  *     responses:
  *       201:
  *         description: Availability slot created successfully
+ *       400:
+ *         description: Invalid request body or date range
  *       401:
  *         description: Authentication required
  *       403:
  *         description: Admin privileges required
+ *       409:
+ *         description: Slot conflicts with existing availability
  */
 router.post(
   "/",
