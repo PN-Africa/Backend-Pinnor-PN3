@@ -215,3 +215,45 @@ export const logout = async (req, res, next) => {
     next(error);
   }
 };
+
+// Google OAuth Login
+export const googleLogin = async (req, res, next) => {
+  try {
+    const redirectTo = process.env.GOOGLE_OAUTH_REDIRECT_URL;
+
+    if (!redirectTo) {
+      return res.status(500).json({
+        success: false,
+        error: "GOOGLE_REDIRECT_NOT_CONFIGURED",
+        message: "Google OAuth redirect URL is not configured"
+      });
+    }
+
+    const { data, error } =
+      await supabaseAuth.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          skipBrowserRedirect: true
+        }
+      });
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: "GOOGLE_LOGIN_FAILED",
+        message: error.message
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Google authentication URL generated successfully",
+      data: {
+        url: data.url
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};

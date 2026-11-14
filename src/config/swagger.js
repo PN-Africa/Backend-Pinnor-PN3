@@ -38,7 +38,7 @@ const options = {
       {
         name: "Authentication",
         description:
-          "User registration, login and authentication management",
+          "User registration, email/password login, signup OTP verification, Google OAuth sign-in through Supabase, and authentication management. Google Sign-In is initiated by the frontend using the Supabase client. Protected API endpoints use the Supabase access token as a Bearer JWT.",
       },
       {
         name: "Providers",

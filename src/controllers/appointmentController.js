@@ -1,6 +1,6 @@
 import {
   sendCancellationConfirmationEmail
-} from "../config/email.js";
+} from "../services/emailService.js";
 import {
 createBooking,
 getAppointments,

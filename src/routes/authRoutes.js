@@ -11,7 +11,8 @@ import {
   login,
   getCurrentUser,
   verifySignupOtp,
-  logout
+  logout,
+  googleLogin
 } from "../controllers/authController.js";
 
 import { requireAuth } from "../middleware/auth.js";
@@ -41,7 +42,7 @@ const validateBody = (schema) => (req, res, next) => {
  * @swagger
  * tags:
  *   name: Authentication
- *   description: User registration, login and authentication management
+ *   description: User registration, login, Google OAuth and authentication management
  */
 
 /**
@@ -110,6 +111,22 @@ const validateBody = (schema) => (req, res, next) => {
  *         description: Invalid email or password
  *       403:
  *         description: User profile or role not found
+ */
+
+/**
+ * @swagger
+ * /api/auth/google:
+ *   get:
+ *     summary: Initiate Google login
+ *     description: Generates a Google OAuth authentication URL through Supabase. The frontend should redirect the user to the returned URL.
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Google authentication URL generated successfully
+ *       400:
+ *         description: Google authentication failed
+ *       500:
+ *         description: Google OAuth redirect URL is not configured
  */
 
 /**
@@ -184,6 +201,9 @@ router.post("/register", validateBody(registerSchema), register);
 
 // Login
 router.post("/login", validateBody(loginSchema), login);
+
+// Google OAuth login
+router.get("/google", googleLogin);
 
 // Get current authenticated user
 router.get("/me", requireAuth, getCurrentUser);
