@@ -4,18 +4,22 @@ import { supabase } from "../config/supabase.js";
 
 export const register = async (req, res, next) => {
   try {
-    const { fullName, email, phone, password } = req.body;
+    const body = req.body || {};
 
-    if (
-      typeof fullName !== "string" ||
-      typeof email !== "string" ||
-      typeof phone !== "string" ||
-      typeof password !== "string"
-    ) {
+    const fullName =
+      typeof body.fullName === "string" ? body.fullName : "";
+    const email =
+      typeof body.email === "string" ? body.email : "";
+    const phone =
+      typeof body.phone === "string" ? body.phone : "";
+    const password =
+      typeof body.password === "string" ? body.password : "";
+
+    if (!fullName || !email || !phone || !password) {
       return res.status(400).json({
         success: false,
-        error: "INVALID_FIELDS",
-        message: "All registration fields are required"
+        error: "MISSING_FIELDS",
+        message: "Full name, email, phone, and password are required"
       });
     }
 
@@ -23,11 +27,11 @@ export const register = async (req, res, next) => {
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedPhone = phone.trim();
 
-    if (!normalizedName || !normalizedEmail || !normalizedPhone || !password) {
+    if (!normalizedName || !normalizedEmail || !normalizedPhone) {
       return res.status(400).json({
         success: false,
         error: "MISSING_FIELDS",
-        message: "Full name, email, phone, and password are required"
+        message: "Full name, email, and phone are required"
       });
     }
 
@@ -117,9 +121,7 @@ export const login = async (req, res, next) => {
       .eq("id", data.user.id)
       .maybeSingle();
 
-    if (profileError) {
-      return next(profileError);
-    }
+    if (profileError) return next(profileError);
 
     if (!profile || !profile.role) {
       return res.status(403).json({
@@ -157,9 +159,7 @@ export const getCurrentUser = async (req, res, next) => {
       .eq("id", req.user.id)
       .maybeSingle();
 
-    if (error) {
-      return next(error);
-    }
+    if (error) return next(error);
 
     if (!profile || !profile.role) {
       return res.status(404).json({
@@ -243,10 +243,7 @@ export const logout = async (req, res, next) => {
       });
     }
 
-    const { error } = await supabase.auth.admin.signOut(
-      token,
-      "local"
-    );
+    const { error } = await supabase.auth.admin.signOut(token, "local");
 
     if (error) {
       console.error("Logout failed:", error.message);
@@ -267,7 +264,6 @@ export const logout = async (req, res, next) => {
   }
 };
 
-// Google OAuth Login
 export const googleLogin = async (req, res, next) => {
   try {
     const redirectTo = process.env.GOOGLE_OAUTH_REDIRECT_URL;
@@ -280,14 +276,13 @@ export const googleLogin = async (req, res, next) => {
       });
     }
 
-    const { data, error } =
-      await supabaseAuth.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo,
-          skipBrowserRedirect: true
-        }
-      });
+    const { data, error } = await supabaseAuth.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+        skipBrowserRedirect: true
+      }
+    });
 
     if (error) {
       return res.status(400).json({
@@ -300,9 +295,7 @@ export const googleLogin = async (req, res, next) => {
     return res.status(200).json({
       success: true,
       message: "Google authentication URL generated successfully",
-      data: {
-        url: data.url
-      }
+      data: { url: data.url }
     });
   } catch (error) {
     next(error);
