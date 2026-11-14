@@ -246,3 +246,27 @@ export const completeAppointment = async (appointmentId) => {
     ["confirmed"]
   );
 };
+
+
+export const getAppointmentByReference = async (reference) => {
+  const normalizedReference = String(reference || "")
+    .trim()
+    .toUpperCase();
+
+  if (!normalizedReference) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .select(appointmentFields)
+    .eq("booking_reference", normalizedReference)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+};
+
