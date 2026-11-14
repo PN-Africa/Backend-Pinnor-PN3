@@ -1,10 +1,14 @@
+
 import express from "express";
 
 import {
   createBookingController,
   getAppointmentsController,
+  getMyAppointmentsController,
+  lookupAppointmentController,
   getAppointmentByIdController,
   cancelAppointmentController,
+  cancelMyAppointmentController,
   completeAppointmentController
 } from "../controllers/appointmentController.js";
 
@@ -74,6 +78,53 @@ router.post(
 
 /**
  * @swagger
+ * /api/appointments/lookup/{reference}:
+ *   get:
+ *     summary: Look up a guest appointment by booking reference
+ *     description: Retrieves limited appointment information without requiring authentication.
+ *     tags:
+ *       - Appointments
+ *     parameters:
+ *       - in: path
+ *         name: reference
+ *         required: true
+ *         description: Guest booking reference
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Appointment retrieved successfully
+ *       404:
+ *         description: Appointment not found
+ */
+router.get(
+  "/lookup/:reference",
+  lookupAppointmentController
+);
+
+/**
+ * @swagger
+ * /api/appointments/mine:
+ *   get:
+ *     summary: Get appointments belonging to the authenticated patient
+ *     tags:
+ *       - Appointments
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Patient appointments retrieved successfully
+ *       401:
+ *         description: Authentication required
+ */
+router.get(
+  "/mine",
+  requireAuth,
+  getMyAppointmentsController
+);
+
+/**
+ * @swagger
  * /api/appointments:
  *   get:
  *     summary: Get all appointments
@@ -132,9 +183,42 @@ router.get(
 
 /**
  * @swagger
+ * /api/appointments/{id}/my-cancel:
+ *   patch:
+ *     summary: Cancel an appointment belonging to the authenticated patient
+ *     tags:
+ *       - Appointments
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Appointment UUID
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Appointment cancelled successfully
+ *       401:
+ *         description: Authentication required
+ *       404:
+ *         description: Appointment not found
+ *       409:
+ *         description: Appointment cannot be cancelled
+ */
+router.patch(
+  "/:id/my-cancel",
+  requireAuth,
+  cancelMyAppointmentController
+);
+
+/**
+ * @swagger
  * /api/appointments/{id}/cancel:
  *   patch:
- *     summary: Cancel an appointment
+ *     summary: Cancel an appointment (admin)
  *     tags:
  *       - Appointments
  *     security:

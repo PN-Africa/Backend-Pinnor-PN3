@@ -128,6 +128,30 @@ export const getAppointments = async ({
   return data;
 };
 
+export const getPatientAppointments = async (email) => {
+  const normalizedEmail = String(email || "")
+    .trim()
+    .toLowerCase();
+
+  if (!normalizedEmail) {
+    const err = new Error("Authenticated user email is required");
+    err.statusCode = 401;
+    throw err;
+  }
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .select(appointmentFields)
+    .ilike("patient_email", normalizedEmail)
+    .order("appointment_date", { ascending: true });
+
+  if (error) {
+    throw error;
+  }
+
+  return data || [];
+};
+
 export const getAppointmentById = async (appointmentId) => {
   return getAppointment(appointmentId);
 };
@@ -190,6 +214,29 @@ export const cancelAppointment = async (appointmentId) => {
     provider_name: providerResult.data?.name || "Not specified",
     service_name: serviceResult.data?.name || "Not specified"
   };
+};
+
+export const cancelPatientAppointment = async (
+  appointmentId,
+  patientEmail
+) => {
+  const appointment = await getAppointment(appointmentId);
+
+  const appointmentEmail = String(
+    appointment.patient_email || ""
+  ).trim().toLowerCase();
+
+  const authenticatedEmail = String(
+    patientEmail || ""
+  ).trim().toLowerCase();
+
+  if (!authenticatedEmail || appointmentEmail !== authenticatedEmail) {
+    const err = new Error("You are not authorized to cancel this appointment");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  return cancelAppointment(appointmentId);
 };
 
 export const completeAppointment = async (appointmentId) => {
