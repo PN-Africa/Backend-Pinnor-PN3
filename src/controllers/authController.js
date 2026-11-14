@@ -4,11 +4,58 @@ import { supabase } from "../config/supabase.js";
 
 export const register = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { fullName, email, phone, password } = req.body;
+
+    if (
+      typeof fullName !== "string" ||
+      typeof email !== "string" ||
+      typeof phone !== "string" ||
+      typeof password !== "string"
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: "INVALID_FIELDS",
+        message: "All registration fields are required"
+      });
+    }
+
+    const normalizedName = fullName.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPhone = phone.trim();
+
+    if (!normalizedName || !normalizedEmail || !normalizedPhone || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "MISSING_FIELDS",
+        message: "Full name, email, phone, and password are required"
+      });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return res.status(400).json({
+        success: false,
+        error: "INVALID_EMAIL",
+        message: "Please provide a valid email address"
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        error: "WEAK_PASSWORD",
+        message: "Password must be at least 8 characters long"
+      });
+    }
 
     const { data, error } = await supabaseAuth.auth.signUp({
-      email,
-      password
+      email: normalizedEmail,
+      password,
+      options: {
+        data: {
+          full_name: normalizedName,
+          phone: normalizedPhone
+        }
+      }
     });
 
     if (error) {
@@ -35,7 +82,9 @@ export const register = async (req, res, next) => {
       data: {
         user: {
           id: data.user.id,
-          email: data.user.email
+          full_name: normalizedName,
+          email: data.user.email,
+          phone: normalizedPhone
         },
         session: data.session
       }
@@ -64,7 +113,7 @@ export const login = async (req, res, next) => {
 
     const { data: profile, error: profileError } = await supabase
       .from("user_profiles")
-      .select("role, full_name, email, avatar_url")
+      .select("role, full_name, email, phone, avatar_url")
       .eq("id", data.user.id)
       .maybeSingle();
 
@@ -88,6 +137,7 @@ export const login = async (req, res, next) => {
           id: data.user.id,
           email: profile.email || data.user.email,
           full_name: profile.full_name,
+          phone: profile.phone,
           avatar_url: profile.avatar_url,
           role: profile.role
         },
@@ -103,7 +153,7 @@ export const getCurrentUser = async (req, res, next) => {
   try {
     const { data: profile, error } = await supabase
       .from("user_profiles")
-      .select("role, full_name, email, avatar_url")
+      .select("role, full_name, email, phone, avatar_url")
       .eq("id", req.user.id)
       .maybeSingle();
 
@@ -126,6 +176,7 @@ export const getCurrentUser = async (req, res, next) => {
           id: req.user.id,
           email: profile.email || req.user.email,
           full_name: profile.full_name,
+          phone: profile.phone,
           avatar_url: profile.avatar_url,
           role: profile.role
         }
