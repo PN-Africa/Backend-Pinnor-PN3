@@ -15,9 +15,31 @@ import {
 
 export const createGuestBooking = async (req, res, next) => {
   try {
+    // Temporary diagnostics: inspect the incoming booking data
+    console.log(
+      "[CREATE BOOKING] REQUEST BODY:",
+      req.body
+    );
+
+    console.log(
+      "[CREATE BOOKING] SLOT ID VALUE:",
+      req.body?.slotId
+    );
+
+    console.log(
+      "[CREATE BOOKING] SLOT ID TYPE:",
+      typeof req.body?.slotId
+    );
+
+    // Validate request body
     const validation = createBookingSchema.safeParse(req.body);
 
     if (!validation.success) {
+      console.error(
+        "[CREATE BOOKING] ZOD VALIDATION ERRORS:",
+        validation.error.issues
+      );
+
       return res.status(400).json({
         success: false,
         message: "Validation failed",

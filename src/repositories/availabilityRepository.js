@@ -1,6 +1,8 @@
 
 import { supabase } from "../config/supabase.js";
 
+const LAGOS_OFFSET = "+01:00";
+
 const getSlot = async (slotId) => {
   const { data, error } = await supabase
     .from("availability_slots")
@@ -35,6 +37,41 @@ const validateSlotTime = (startTime, endTime) => {
     err.statusCode = 400;
     throw err;
   }
+};
+
+const validateDate = (date) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const err = new Error("Date must use YYYY-MM-DD format");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const parsedDate = new Date(`${date}T00:00:00.000Z`);
+
+  if (
+    Number.isNaN(parsedDate.getTime()) ||
+    parsedDate.toISOString().slice(0, 10) !== date
+  ) {
+    const err = new Error("Invalid availability date");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const nextDate = new Date(
+    parsedDate.getTime() + 24 * 60 * 60 * 1000
+  )
+    .toISOString()
+    .slice(0, 10);
+
+  return {
+    start: new Date(
+      `${date}T00:00:00.000${LAGOS_OFFSET}`
+    ).toISOString(),
+
+    end: new Date(
+      `${nextDate}T00:00:00.000${LAGOS_OFFSET}`
+    ).toISOString()
+  };
 };
 
 const validateProviderAndService = async (
@@ -88,7 +125,6 @@ const validateProviderAndService = async (
 
 const checkOverlap = async ({
   providerId,
-  serviceId,
   startTime,
   endTime,
   excludeId
@@ -97,7 +133,6 @@ const checkOverlap = async ({
     .from("availability_slots")
     .select("id")
     .eq("provider_id", providerId)
-    .eq("service_id", serviceId)
     .neq("status", "blocked")
     .lt("start_time", endTime)
     .gt("end_time", startTime);
@@ -114,7 +149,7 @@ const checkOverlap = async ({
 
   if (data?.length) {
     const err = new Error(
-      "Availability slot overlaps with an existing slot"
+      "Availability slot overlaps with an existing slot for this provider"
     );
     err.statusCode = 409;
     throw err;
@@ -133,7 +168,6 @@ export const createAvailabilitySlot = async ({
 
   await checkOverlap({
     providerId,
-    serviceId,
     startTime,
     endTime
   });
@@ -157,7 +191,6 @@ export const createAvailabilitySlot = async ({
 
   return data;
 };
-
 
 export const getAvailabilitySlots = async ({
   providerId,
@@ -190,9 +223,11 @@ export const getAvailabilitySlots = async ({
   }
 
   if (date) {
+    const { start, end } = validateDate(date);
+
     query = query
-      .gte("start_time", `${date}T00:00:00`)
-      .lt("start_time", `${date}T23:59:59`);
+      .gte("start_time", start)
+      .lt("start_time", end);
   }
 
   const { data, error } = await query;
@@ -240,7 +275,6 @@ export const updateAvailabilitySlot = async (
 
   await checkOverlap({
     providerId,
-    serviceId,
     startTime,
     endTime,
     excludeId: slotId
