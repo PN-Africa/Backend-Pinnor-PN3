@@ -141,7 +141,17 @@ export const getPatientAppointments = async (email) => {
 
   const { data, error } = await supabase
     .from("appointments")
-    .select(appointmentFields)
+    .select(`
+      ${appointmentFields},
+      provider:providers (
+        name,
+        specialty
+      ),
+      service:services (
+        name,
+        duration_minutes
+      )
+    `)
     .ilike("patient_email", normalizedEmail)
     .order("appointment_date", { ascending: true });
 
