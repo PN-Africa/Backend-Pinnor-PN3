@@ -53,6 +53,7 @@ const updateAppointmentStatus = async (
   return data;
 };
 
+
 export const createBooking = async ({
   slotId,
   patientName,
@@ -89,7 +90,33 @@ export const createBooking = async ({
     throw err;
   }
 
-  return data;
+  const [providerResult, serviceResult] = await Promise.all([
+    supabase
+      .from("providers")
+      .select("name")
+      .eq("id", data.provider_id)
+      .maybeSingle(),
+
+    supabase
+      .from("services")
+      .select("name")
+      .eq("id", data.service_id)
+      .maybeSingle()
+  ]);
+
+  if (providerResult.error) {
+    console.error("Could not retrieve provider name:", providerResult.error.message);
+  }
+
+  if (serviceResult.error) {
+    console.error("Could not retrieve service name:", serviceResult.error.message);
+  }
+
+  return {
+    ...data,
+    provider_name: providerResult.data?.name || "Not specified",
+    service_name: serviceResult.data?.name || "Not specified"
+  };
 };
 
 export const getAppointments = async ({

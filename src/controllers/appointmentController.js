@@ -1,5 +1,6 @@
 
 import {
+  sendBookingConfirmationEmail,
   sendCancellationConfirmationEmail
 } from "../services/emailService.js";
 
@@ -18,7 +19,16 @@ export const createBookingController = async (req, res, next) => {
   try {
     const appointment = await createBooking(req.body);
 
-    res.status(201).json({
+    try {
+      await sendBookingConfirmationEmail(appointment);
+    } catch (emailError) {
+      console.error(
+        "Booking confirmation email failed:",
+        emailError.message
+      );
+    }
+
+    return res.status(201).json({
       success: true,
       message: "Appointment booked successfully",
       data: appointment
