@@ -20,47 +20,47 @@ const options = {
       title: "Pinnor Health API",
       version: "1.0.0",
       description:
-        "REST API for the Pinnor Health appointment booking platform",
+        "REST API for the Pinnor Health appointment booking platform"
     },
 
     servers: [
       {
         url: "https://backend-pinnor-pn3.onrender.com",
-        description: "Production server",
+        description: "Production server"
       },
       {
         url: "http://localhost:5000",
-        description: "Development server",
-      },
+        description: "Development server"
+      }
     ],
 
     tags: [
       {
         name: "Authentication",
         description:
-          "User registration, email/password login, signup OTP verification, Google OAuth sign-in through Supabase, and authentication management. Google Sign-In is initiated by the frontend using the Supabase client. Protected API endpoints use the Supabase access token as a Bearer JWT.",
+          "User registration, email/password login, signup OTP verification, Google OAuth sign-in through Supabase, and authentication management. Google Sign-In is initiated by the frontend using the Supabase client. Protected API endpoints use the Supabase access token as a Bearer JWT."
       },
       {
         name: "Providers",
-        description: "Provider management",
+        description: "Provider management"
       },
       {
         name: "Services",
-        description: "Healthcare service management",
+        description: "Healthcare service management"
       },
       {
         name: "Availability",
-        description: "Provider availability management",
+        description: "Provider availability management"
       },
       {
         name: "Bookings",
-        description: "Guest appointment booking",
+        description: "Guest appointment booking"
       },
       {
         name: "Appointments",
         description:
-          "Appointment management, including cancellation and completion",
-      },
+          "Appointment management, including cancellation and completion"
+      }
     ],
 
     components: {
@@ -68,13 +68,13 @@ const options = {
         bearerAuth: {
           type: "http",
           scheme: "bearer",
-          bearerFormat: "JWT",
-        },
-      },
-    },
+          bearerFormat: "JWT"
+        }
+      }
+    }
   },
 
-  apis: [routesPath],
+  apis: [routesPath]
 };
 
 const swaggerSpec = swaggerJsdoc(options);
@@ -84,14 +84,20 @@ console.log(
   Object.keys(swaggerSpec.paths || {})
 );
 
+console.log(
+  "Cancellation parameters:",
+  JSON.stringify({
+    admin: swaggerSpec.paths?.["/api/appointments/{id}/cancel"]?.patch?.parameters,
+    patient: swaggerSpec.paths?.["/api/appointments/{id}/my-cancel"]?.patch?.parameters
+  }, null, 2)
+);
+
 export const setupSwagger = (app) => {
-  // Serve raw JSON specification
   app.get("/api-docs.json", (req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.send(swaggerSpec);
   });
 
-  // Serve Swagger UI
   app.use(
     "/api-docs",
     swaggerUi.serve,

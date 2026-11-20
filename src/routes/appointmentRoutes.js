@@ -26,15 +26,15 @@ const router = express.Router();
  * @swagger
  * tags:
  *   - name: Appointments
- *     description: Appointment booking and admin management
+ *     description: Guest booking, patient appointments, and admin appointment management
  */
 
 /**
  * @swagger
  * /api/appointments:
  *   post:
- *     summary: Book an appointment automatically
- *     description: Books an available slot on a first-come, first-served basis without manual confirmation.
+ *     summary: Book an appointment
+ *     description: Books an available appointment slot automatically on a first-come, first-served basis. No manual confirmation is required.
  *     tags:
  *       - Appointments
  *     requestBody:
@@ -52,23 +52,28 @@ const router = express.Router();
  *               slotId:
  *                 type: string
  *                 format: uuid
+ *                 description: ID of the selected availability slot
  *               patientName:
  *                 type: string
+ *                 description: Patient's full name
  *               patientEmail:
  *                 type: string
  *                 format: email
+ *                 description: Patient's email address
  *               patientPhone:
  *                 type: string
+ *                 description: Patient's phone number
  *               patientMessage:
  *                 type: string
  *                 nullable: true
+ *                 description: Optional message for the provider
  *     responses:
  *       201:
  *         description: Appointment booked successfully
  *       400:
  *         description: Invalid booking details
  *       409:
- *         description: Slot is no longer available
+ *         description: Selected slot is no longer available
  */
 router.post(
   "/",
@@ -80,15 +85,15 @@ router.post(
  * @swagger
  * /api/appointments/lookup/{reference}:
  *   get:
- *     summary: Look up a guest appointment by booking reference
- *     description: Retrieves limited appointment information without requiring authentication.
+ *     summary: Look up a guest appointment
+ *     description: Retrieves limited appointment information using a booking reference. Authentication is not required.
  *     tags:
  *       - Appointments
  *     parameters:
  *       - in: path
  *         name: reference
  *         required: true
- *         description: Guest booking reference
+ *         description: Appointment booking reference
  *         schema:
  *           type: string
  *     responses:
@@ -106,7 +111,7 @@ router.get(
  * @swagger
  * /api/appointments/mine:
  *   get:
- *     summary: Get appointments belonging to the authenticated patient
+ *     summary: Get the authenticated patient's appointments
  *     tags:
  *       - Appointments
  *     security:
@@ -128,6 +133,7 @@ router.get(
  * /api/appointments:
  *   get:
  *     summary: Get all appointments
+ *     description: Retrieves appointments with optional provider, service, status, and date filters. Admin access is required.
  *     tags:
  *       - Appointments
  *     security:
@@ -151,7 +157,8 @@ router.get(
  * @swagger
  * /api/appointments/{id}:
  *   get:
- *     summary: Get appointment by ID
+ *     summary: Get an appointment by ID
+ *     description: Retrieves appointment details. Admin access is required.
  *     tags:
  *       - Appointments
  *     security:
@@ -160,7 +167,7 @@ router.get(
  *       - in: path
  *         name: id
  *         required: true
- *         description: Appointment UUID
+ *         description: UUID of the appointment
  *         schema:
  *           type: string
  *           format: uuid
@@ -185,7 +192,8 @@ router.get(
  * @swagger
  * /api/appointments/{id}/my-cancel:
  *   patch:
- *     summary: Cancel an appointment belonging to the authenticated patient
+ *     summary: Cancel the authenticated patient's appointment
+ *     description: Cancels an appointment only when it belongs to the authenticated patient's email address.
  *     tags:
  *       - Appointments
  *     security:
@@ -194,7 +202,7 @@ router.get(
  *       - in: path
  *         name: id
  *         required: true
- *         description: Appointment UUID
+ *         description: UUID of the appointment to cancel
  *         schema:
  *           type: string
  *           format: uuid
@@ -203,6 +211,8 @@ router.get(
  *         description: Appointment cancelled successfully
  *       401:
  *         description: Authentication required
+ *       403:
+ *         description: Patient is not authorized to cancel this appointment
  *       404:
  *         description: Appointment not found
  *       409:
@@ -218,7 +228,8 @@ router.patch(
  * @swagger
  * /api/appointments/{id}/cancel:
  *   patch:
- *     summary: Cancel an appointment (admin)
+ *     summary: Cancel an appointment as an administrator
+ *     description: Allows an authenticated administrator to cancel an appointment.
  *     tags:
  *       - Appointments
  *     security:
@@ -227,7 +238,7 @@ router.patch(
  *       - in: path
  *         name: id
  *         required: true
- *         description: Appointment UUID
+ *         description: UUID of the appointment to cancel
  *         schema:
  *           type: string
  *           format: uuid
@@ -238,6 +249,8 @@ router.patch(
  *         description: Authentication required
  *       403:
  *         description: Admin privileges required
+ *       404:
+ *         description: Appointment not found
  *       409:
  *         description: Appointment cannot be cancelled
  */
@@ -253,6 +266,7 @@ router.patch(
  * /api/appointments/{id}/complete:
  *   patch:
  *     summary: Mark an appointment as completed
+ *     description: Allows an administrator to mark a confirmed appointment as completed.
  *     tags:
  *       - Appointments
  *     security:
@@ -261,7 +275,7 @@ router.patch(
  *       - in: path
  *         name: id
  *         required: true
- *         description: Appointment UUID
+ *         description: UUID of the appointment
  *         schema:
  *           type: string
  *           format: uuid
@@ -272,6 +286,8 @@ router.patch(
  *         description: Authentication required
  *       403:
  *         description: Admin privileges required
+ *       404:
+ *         description: Appointment not found
  *       409:
  *         description: Appointment cannot be completed
  */
