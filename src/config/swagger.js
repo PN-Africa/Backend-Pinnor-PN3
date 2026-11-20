@@ -86,10 +86,28 @@ console.log(
 
 console.log(
   "Cancellation parameters:",
-  JSON.stringify({
-    admin: swaggerSpec.paths?.["/api/appointments/{id}/cancel"]?.patch?.parameters,
-    patient: swaggerSpec.paths?.["/api/appointments/{id}/my-cancel"]?.patch?.parameters
-  }, null, 2)
+  JSON.stringify(
+    {
+      admin:
+        swaggerSpec.paths?.["/api/appointments/{id}/cancel"]?.patch
+          ?.parameters,
+
+      patient:
+        swaggerSpec.paths?.["/api/appointments/{id}/my-cancel"]?.patch
+          ?.parameters
+    },
+    null,
+    2
+  )
+);
+
+console.log(
+  "Guest cancellation request body:",
+  JSON.stringify(
+    swaggerSpec.paths?.["/api/bookings/cancel"]?.patch?.requestBody,
+    null,
+    2
+  )
 );
 
 export const setupSwagger = (app) => {
