@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 
 export const createServiceSchema = z.object({
@@ -33,7 +34,7 @@ export const createServiceSchema = z.object({
 
   status: z.enum(["active", "inactive"])
     .default("active")
-});
+}).strict();
 
 export const updateServiceSchema = z.object({
   providerId: z.string().uuid({
@@ -67,7 +68,7 @@ export const updateServiceSchema = z.object({
       message: "Duration cannot exceed 1440 minutes"
     })
     .optional()
-}).refine(
+}).strict().refine(
   (data) => Object.keys(data).length > 0,
   {
     message: "At least one field is required"
@@ -78,4 +79,4 @@ export const serviceStatusSchema = z.object({
   status: z.enum(["active", "inactive"], {
     message: "Status must be active or inactive"
   })
-});
+}).strict();

@@ -1,4 +1,3 @@
-// repositories/serviceRepository.js
 
 import { supabase } from "../config/supabase.js";
 
@@ -32,6 +31,7 @@ export const getServices = async () => {
   const { data, error } = await supabase
     .from("services")
     .select("*")
+    .eq("status", "active")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -81,6 +81,7 @@ export const updateService = async (id, updates) => {
 
   return data;
 };
+
 export const updateServiceStatus = async (id, status) => {
   const { data, error } = await supabase
     .from("services")

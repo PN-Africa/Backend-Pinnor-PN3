@@ -1,9 +1,11 @@
 
+import { ZodError } from "zod";
+
 export const errorHandler = (err, req, res, next) => {
   console.error("[Global Error Handler]:", err);
 
   // Zod validation errors
-  if (err.name === "ZodError") {
+  if (err instanceof ZodError || err.name === "ZodError") {
     return res.status(400).json({
       success: false,
       error: "VALIDATION_ERROR",
@@ -15,29 +17,27 @@ export const errorHandler = (err, req, res, next) => {
   // Supabase/PostgreSQL errors
   if (err.code) {
     switch (err.code) {
-     
-case "P0001":
-  if (
-    err.message ===
-    "Appointment slot is no longer available"
-  ) {
-    return res.status(409).json({
-      success: false,
-      error: "SLOT_UNAVAILABLE",
-      message: "This appointment slot is no longer available."
-    });
-  }
+      case "P0001":
+        if (
+          err.message ===
+          "Appointment slot is no longer available"
+        ) {
+          return res.status(409).json({
+            success: false,
+            error: "SLOT_UNAVAILABLE",
+            message: "This appointment slot is no longer available."
+          });
+        }
 
-  if (err.message === "Appointment slot is in the past") {
-    return res.status(409).json({
-      success: false,
-      error: "PAST_APPOINTMENT_SLOT",
-      message: "Appointments cannot be booked in the past."
-    });
-  }
+        if (err.message === "Appointment slot is in the past") {
+          return res.status(409).json({
+            success: false,
+            error: "PAST_APPOINTMENT_SLOT",
+            message: "Appointments cannot be booked in the past."
+          });
+        }
 
-  break;
-
+        break;
 
       case "23505":
         return res.status(409).json({

@@ -1,3 +1,4 @@
+
 import {
   createProvider,
   getProviders,
@@ -17,7 +18,7 @@ export const createProviderController = async (req, res, next) => {
       data: provider
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -30,7 +31,7 @@ export const getProvidersController = async (req, res, next) => {
       data: providers
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -43,7 +44,7 @@ export const getProviderByIdController = async (req, res, next) => {
       data: provider
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -60,7 +61,7 @@ export const updateProviderController = async (req, res, next) => {
       data: provider
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -81,7 +82,7 @@ export const updateProviderStatusController = async (
       data: provider
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -95,6 +96,6 @@ export const deleteProviderController = async (req, res, next) => {
       data: provider
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };

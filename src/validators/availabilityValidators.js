@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 
 export const createAvailabilitySchema = z.object({
@@ -16,7 +17,7 @@ export const createAvailabilitySchema = z.object({
   endTime: z.string().datetime({
     message: "Invalid endTime format"
   })
-}).refine(
+}).strict().refine(
   (data) => new Date(data.startTime) < new Date(data.endTime),
   {
     message: "End time must be later than start time",
@@ -40,16 +41,20 @@ export const updateAvailabilitySchema = z.object({
   endTime: z.string().datetime({
     message: "Invalid endTime format"
   }).optional()
-}).refine(
-  (data) => {
-    if (!data.startTime || !data.endTime) {
-      return true;
+}).strict()
+  .refine(
+    (data) => Object.keys(data).length > 0,
+    {
+      message: "At least one field must be provided for update"
     }
-
-    return new Date(data.startTime) < new Date(data.endTime);
-  },
-  {
-    message: "End time must be later than start time",
-    path: ["endTime"]
-  }
-);
+  )
+  .refine(
+    (data) => {
+      if (!data.startTime || !data.endTime) return true;
+      return new Date(data.startTime) < new Date(data.endTime);
+    },
+    {
+      message: "End time must be later than start time",
+      path: ["endTime"]
+    }
+  );

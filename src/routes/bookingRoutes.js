@@ -24,9 +24,8 @@ const router = express.Router();
  * /api/bookings:
  *   post:
  *     summary: Create an appointment booking
- *     description: Book as a guest without an access token, or as a registered user with a valid Supabase Bearer token.
- *     tags:
- *       - Bookings
+ *     description: Book as a guest or registered user with a valid Supabase Bearer token.
+ *     tags: [Bookings]
  *     security:
  *       - bearerAuth: []
  *       - {}
@@ -69,45 +68,11 @@ router.post("/", optionalAuth, createGuestBooking);
 
 /**
  * @swagger
- * /api/bookings/{reference}:
- *   get:
- *     summary: Look up a guest booking
- *     description: Retrieves a booking using its reference and the patient's email address.
- *     tags:
- *       - Bookings
- *     parameters:
- *       - in: path
- *         name: reference
- *         required: true
- *         description: Booking reference
- *         schema:
- *           type: string
- *         example: PIN-A1B2C3D4
- *       - in: query
- *         name: patientEmail
- *         required: true
- *         description: Email address used when creating the booking
- *         schema:
- *           type: string
- *           format: email
- *     responses:
- *       200:
- *         description: Booking retrieved successfully
- *       400:
- *         description: Validation failed
- *       404:
- *         description: Booking not found
- */
-router.get("/:reference", lookupGuestBooking);
-
-/**
- * @swagger
  * /api/bookings/reschedule:
  *   patch:
  *     summary: Reschedule a guest appointment
- *     description: Reschedules an appointment using its booking reference, patient email, and a new availability slot.
- *     tags:
- *       - Bookings
+ *     description: Reschedules using the booking reference, patient email, and new slot.
+ *     tags: [Bookings]
  *     requestBody:
  *       required: true
  *       content:
@@ -125,11 +90,9 @@ router.get("/:reference", lookupGuestBooking);
  *               patientEmail:
  *                 type: string
  *                 format: email
- *                 example: patient@example.com
  *               newSlotId:
  *                 type: string
  *                 format: uuid
- *                 description: UUID of the new availability slot
  *     responses:
  *       200:
  *         description: Appointment rescheduled successfully
@@ -138,7 +101,7 @@ router.get("/:reference", lookupGuestBooking);
  *       404:
  *         description: Booking not found
  *       409:
- *         description: New appointment slot is unavailable or rescheduling is not allowed
+ *         description: New slot unavailable or rescheduling not allowed
  */
 router.patch("/reschedule", rescheduleGuestBooking);
 
@@ -147,9 +110,8 @@ router.patch("/reschedule", rescheduleGuestBooking);
  * /api/bookings/cancel:
  *   patch:
  *     summary: Cancel a guest appointment
- *     description: Cancels an appointment using the booking reference and the patient's registered booking email. No authentication token is required by this route.
- *     tags:
- *       - Bookings
+ *     description: Cancels using the booking reference and patient email. No token required.
+ *     tags: [Bookings]
  *     requestBody:
  *       required: true
  *       content:
@@ -162,13 +124,10 @@ router.patch("/reschedule", rescheduleGuestBooking);
  *             properties:
  *               bookingReference:
  *                 type: string
- *                 description: Reference generated when the appointment was booked
  *                 example: PIN-A1B2C3D4
  *               patientEmail:
  *                 type: string
  *                 format: email
- *                 description: Email address used when creating the booking
- *                 example: patient@example.com
  *     responses:
  *       200:
  *         description: Appointment cancelled successfully
@@ -180,5 +139,35 @@ router.patch("/reschedule", rescheduleGuestBooking);
  *         description: Appointment cannot be cancelled
  */
 router.patch("/cancel", cancelGuestBooking);
+
+/**
+ * @swagger
+ * /api/bookings/{reference}:
+ *   get:
+ *     summary: Look up a booking
+ *     description: Retrieves a booking using its reference and patient email.
+ *     tags: [Bookings]
+ *     parameters:
+ *       - in: path
+ *         name: reference
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: PIN-A1B2C3D4
+ *       - in: query
+ *         name: patientEmail
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
+ *     responses:
+ *       200:
+ *         description: Booking retrieved successfully
+ *       400:
+ *         description: Validation failed
+ *       404:
+ *         description: Booking not found
+ */
+router.get("/:reference", lookupGuestBooking);
 
 export default router;

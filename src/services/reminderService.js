@@ -3,31 +3,61 @@ import {
   getAppointmentsFor48HourReminder,
   getAppointmentsFor24HourReminder,
   mark48HourReminderSent,
-  mark24HourReminderSent
+  mark24HourReminderSent,
+  release48HourReminderClaim,
+  release24HourReminderClaim
 } from "../repositories/reminderRepository.js";
 
 import { sendReminderEmail } from "./emailService.js";
 
-const formatDate = (date) =>
-  new Date(date).toLocaleDateString("en-NG", {
+const reminderConfig = {
+  24: {
+    fetch: getAppointmentsFor24HourReminder,
+    markSent: mark24HourReminderSent,
+    release: release24HourReminderClaim,
+    claimColumn: "reminder_24h_claimed_until",
+    label: "24-hour"
+  },
+  48: {
+    fetch: getAppointmentsFor48HourReminder,
+    markSent: mark48HourReminderSent,
+    release: release48HourReminderClaim,
+    claimColumn: "reminder_48h_claimed_until",
+    label: "48-hour"
+  }
+};
+
+const formatDate = (date) => {
+  const parsed = new Date(date);
+
+  if (!date || Number.isNaN(parsed.getTime())) {
+    return "See your booking details";
+  }
+
+  return parsed.toLocaleDateString("en-NG", {
     year: "numeric",
     month: "long",
     day: "numeric",
     timeZone: "Africa/Lagos"
   });
+};
 
-const formatTime = (time) =>
-  new Date(time).toLocaleTimeString("en-NG", {
+const formatTime = (time) => {
+  const parsed = new Date(time);
+
+  if (!time || Number.isNaN(parsed.getTime())) {
+    return "See your booking details";
+  }
+
+  return parsed.toLocaleTimeString("en-NG", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
     timeZone: "Africa/Lagos"
   });
+};
 
-const sendAppointmentReminder = async (
-  appointment,
-  markReminderSent
-) => {
+const sendAppointmentReminder = async (appointment) => {
   await sendReminderEmail({
     to: appointment.patient_email,
     patientName: appointment.patient_name,
@@ -36,27 +66,58 @@ const sendAppointmentReminder = async (
     appointmentDate: formatDate(appointment.start_time),
     startTime: formatTime(appointment.start_time)
   });
-
-  await markReminderSent(appointment.id);
 };
 
-const processReminders = async (
-  fetchAppointments,
-  markReminderSent,
-  reminderType
-) => {
-  const appointments = await fetchAppointments();
+const processReminders = async (hours) => {
+  const config = reminderConfig[hours];
+  const appointments = await config.fetch();
+
   let dispatchedCount = 0;
   let failedCount = 0;
 
   for (const appointment of appointments) {
+    const claimedUntil = appointment[config.claimColumn];
+
+    if (!claimedUntil) {
+      failedCount++;
+
+      console.error(
+        `Missing ${config.label} reminder claim for appointment ${appointment.id}`
+      );
+
+      continue;
+    }
+
     try {
-      await sendAppointmentReminder(appointment, markReminderSent);
+      await sendAppointmentReminder(appointment);
+    } catch (error) {
+      failedCount++;
+
+      console.error(
+        `Failed to send ${config.label} reminder for appointment ${appointment.id}:`,
+        error.message
+      );
+
+      try {
+        await config.release(appointment.id, claimedUntil);
+      } catch (releaseError) {
+        console.error(
+          `Failed to release reminder claim for appointment ${appointment.id}:`,
+          releaseError.message
+        );
+      }
+
+      continue;
+    }
+
+    try {
+      await config.markSent(appointment.id, claimedUntil);
       dispatchedCount++;
     } catch (error) {
       failedCount++;
+
       console.error(
-        `Failed to send ${reminderType} reminder for ${appointment.id}:`,
+        `Email sent but reminder status update failed for appointment ${appointment.id}:`,
         error.message
       );
     }
@@ -69,18 +130,10 @@ const processReminders = async (
 };
 
 export const process48HourReminders = () =>
-  processReminders(
-    getAppointmentsFor48HourReminder,
-    mark48HourReminderSent,
-    "48-hour"
-  );
+  processReminders(48);
 
 export const process24HourReminders = () =>
-  processReminders(
-    getAppointmentsFor24HourReminder,
-    mark24HourReminderSent,
-    "24-hour"
-  );
+  processReminders(24);
 
 export const dispatchUpcomingReminders = async () => {
   const [reminders48, reminders24] = await Promise.all([

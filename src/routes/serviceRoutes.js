@@ -1,4 +1,6 @@
+
 import express from "express";
+import { z } from "zod";
 
 import {
   getServicesController,
@@ -23,6 +25,24 @@ import {
 } from "../validators/serviceValidators.js";
 
 const router = express.Router();
+
+const serviceIdSchema = z.string().uuid({
+  message: "Invalid service ID"
+});
+
+const validateServiceId = (req, res, next) => {
+  const result = serviceIdSchema.safeParse(req.params.id);
+
+  if (!result.success) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid service ID",
+      errors: result.error.flatten()
+    });
+  }
+
+  next();
+};
 
 /**
  * @swagger
@@ -52,10 +72,16 @@ router.get("/", getServicesController);
  *     responses:
  *       200:
  *         description: Service retrieved successfully
+ *       400:
+ *         description: Invalid service ID
  *       404:
  *         description: Service not found
  */
-router.get("/:id", getServiceByIdController);
+router.get(
+  "/:id",
+  validateServiceId,
+  getServiceByIdController
+);
 
 /**
  * @swagger
@@ -68,6 +94,8 @@ router.get("/:id", getServiceByIdController);
  *     responses:
  *       201:
  *         description: Service created successfully
+ *       400:
+ *         description: Validation failed
  *       401:
  *         description: Authentication required
  *       403:
@@ -99,6 +127,8 @@ router.post(
  *     responses:
  *       200:
  *         description: Service updated successfully
+ *       400:
+ *         description: Invalid service ID or request body
  *       401:
  *         description: Authentication required
  *       403:
@@ -108,6 +138,7 @@ router.patch(
   "/:id",
   requireAuth,
   requireAdmin,
+  validateServiceId,
   validate(updateServiceSchema),
   updateServiceController
 );
@@ -130,6 +161,8 @@ router.patch(
  *     responses:
  *       200:
  *         description: Service status updated successfully
+ *       400:
+ *         description: Invalid service ID or status
  *       401:
  *         description: Authentication required
  *       403:
@@ -139,6 +172,7 @@ router.patch(
   "/:id/status",
   requireAuth,
   requireAdmin,
+  validateServiceId,
   validate(serviceStatusSchema),
   updateServiceStatusController
 );
@@ -161,6 +195,8 @@ router.patch(
  *     responses:
  *       200:
  *         description: Service deleted successfully
+ *       400:
+ *         description: Invalid service ID
  *       401:
  *         description: Authentication required
  *       403:
@@ -170,6 +206,7 @@ router.delete(
   "/:id",
   requireAuth,
   requireAdmin,
+  validateServiceId,
   deleteServiceController
 );
 

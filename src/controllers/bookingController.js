@@ -26,11 +26,7 @@ export const createGuestBooking = async (req, res, next) => {
     }
 
     const userId = req.user?.id ?? null;
-
-    const booking = await createBooking(
-      validation.data,
-      userId
-    );
+    const booking = await createBooking(validation.data, userId);
 
     return res.status(201).json({
       success: true,
@@ -38,7 +34,7 @@ export const createGuestBooking = async (req, res, next) => {
       data: booking
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -67,7 +63,7 @@ export const lookupGuestBooking = async (req, res, next) => {
       data: booking
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -95,7 +91,7 @@ export const rescheduleGuestBooking = async (req, res, next) => {
       data: booking
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -122,6 +118,6 @@ export const cancelGuestBooking = async (req, res, next) => {
       data: booking
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };

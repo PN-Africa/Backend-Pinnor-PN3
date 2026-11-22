@@ -1,6 +1,30 @@
 
 import { supabase } from "../config/supabase.js";
 
+const publicBookingFields = [
+  "id",
+  "provider_id",
+  "service_id",
+  "slot_id",
+  "patient_name",
+  "patient_email",
+  "patient_phone",
+  "patient_message",
+  "appointment_date",
+  "start_time",
+  "end_time",
+  "status",
+  "booking_reference",
+  "created_at",
+  "updated_at"
+].join(", ");
+
+const normalizeEmail = (email) =>
+  String(email || "").trim().toLowerCase();
+
+const normalizeReference = (reference) =>
+  String(reference || "").trim().toUpperCase();
+
 const addBookingNames = async (booking) => {
   const [providerResult, serviceResult] = await Promise.all([
     supabase
@@ -16,8 +40,13 @@ const addBookingNames = async (booking) => {
       .maybeSingle()
   ]);
 
-  if (providerResult.error) throw providerResult.error;
-  if (serviceResult.error) throw serviceResult.error;
+  if (providerResult.error) {
+    console.error("Provider name lookup failed:", providerResult.error.message);
+  }
+
+  if (serviceResult.error) {
+    console.error("Service name lookup failed:", serviceResult.error.message);
+  }
 
   return {
     ...booking,
@@ -26,7 +55,11 @@ const addBookingNames = async (booking) => {
   };
 };
 
-const throwMappedError = (errorCode, errorMap, fallbackMessage) => {
+const throwMappedError = (
+  errorCode,
+  errorMap,
+  fallbackMessage
+) => {
   const result = errorMap[errorCode] ?? {
     message: fallbackMessage,
     statusCode: 500
@@ -35,11 +68,27 @@ const throwMappedError = (errorCode, errorMap, fallbackMessage) => {
   const error = new Error(result.message);
   error.statusCode = result.statusCode;
 
-  if (errorCode) {
-    error.code = errorCode;
-  }
+  if (errorCode) error.code = errorCode;
 
   throw error;
+};
+
+const getBookingById = async (appointmentId) => {
+  const { data, error } = await supabase
+    .from("appointments")
+    .select(publicBookingFields)
+    .eq("id", appointmentId)
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (!data) {
+    const notFoundError = new Error("Booking not found");
+    notFoundError.statusCode = 404;
+    throw notFoundError;
+  }
+
+  return addBookingNames(data);
 };
 
 export const createBooking = async ({
@@ -53,40 +102,49 @@ export const createBooking = async ({
   const { data, error } = await supabase.rpc("create_booking", {
     p_slot_id: slotId,
     p_patient_name: patientName,
-    p_patient_email: patientEmail,
+    p_patient_email: normalizeEmail(patientEmail),
     p_patient_phone: patientPhone,
-    p_patient_message: patientMessage || null,
+    p_patient_message: patientMessage ?? null,
     p_user_id: userId
   });
 
   if (error) throw error;
 
-  if (!data) {
+  if (!data?.id) {
     throw new Error(
       "Booking was created without returning appointment details"
     );
   }
 
-  return addBookingNames(data);
+  return getBookingById(data.id);
 };
 
 export const getBookingByReference = async (
   bookingReference,
   patientEmail
 ) => {
+  const reference = normalizeReference(bookingReference);
+  const email = normalizeEmail(patientEmail);
+
+  if (!reference || !email) {
+    const error = new Error("Booking reference and email are required");
+    error.statusCode = 400;
+    throw error;
+  }
+
   const { data, error } = await supabase
     .from("appointments")
-    .select("*")
-    .eq("booking_reference", bookingReference)
-    .eq("patient_email", patientEmail)
+    .select(publicBookingFields)
+    .eq("booking_reference", reference)
+    .eq("patient_email", email)
     .maybeSingle();
 
   if (error) throw error;
 
   if (!data) {
-    const error = new Error("Booking not found");
-    error.statusCode = 404;
-    throw error;
+    const notFoundError = new Error("Booking not found");
+    notFoundError.statusCode = 404;
+    throw notFoundError;
   }
 
   return addBookingNames(data);
@@ -100,8 +158,8 @@ export const rescheduleBooking = async (
   const { data, error } = await supabase.rpc(
     "reschedule_appointment_atomic",
     {
-      p_booking_reference: bookingReference,
-      p_patient_email: patientEmail,
+      p_booking_reference: normalizeReference(bookingReference),
+      p_patient_email: normalizeEmail(patientEmail),
       p_new_slot_id: newSlotId
     }
   );
@@ -113,19 +171,7 @@ export const rescheduleBooking = async (
       message: "Booking not found",
       statusCode: 404
     },
-    APPOINTMENT_ALREADY_CANCELLED: {
-      message: "Appointment is already cancelled",
-      statusCode: 409
-    },
-    APPOINTMENT_NOT_RESCHEDULABLE: {
-      message: "This appointment cannot be rescheduled",
-      statusCode: 409
-    },
     NEW_SLOT_UNAVAILABLE: {
-      message: "The selected slot is no longer available",
-      statusCode: 409
-    },
-    SLOT_UNAVAILABLE: {
       message: "The selected slot is no longer available",
       statusCode: 409
     },
@@ -145,19 +191,11 @@ export const rescheduleBooking = async (
 
   if (!data.appointment_id) {
     throw new Error(
-      "Rescheduling succeeded but no appointment ID was returned"
+      "Rescheduling succeeded without returning an appointment ID"
     );
   }
 
-  const { data: appointment, error: fetchError } = await supabase
-    .from("appointments")
-    .select("*")
-    .eq("id", data.appointment_id)
-    .single();
-
-  if (fetchError) throw fetchError;
-
-  return addBookingNames(appointment);
+  return getBookingById(data.appointment_id);
 };
 
 export const cancelBooking = async (
@@ -167,8 +205,8 @@ export const cancelBooking = async (
   const { data, error } = await supabase.rpc(
     "cancel_appointment_atomic",
     {
-      p_booking_reference: bookingReference,
-      p_patient_email: patientEmail
+      p_booking_reference: normalizeReference(bookingReference),
+      p_patient_email: normalizeEmail(patientEmail)
     }
   );
 
@@ -197,5 +235,11 @@ export const cancelBooking = async (
     );
   }
 
-  return data;
+  if (!data.appointment_id) {
+    throw new Error(
+      "Cancellation succeeded without returning an appointment ID"
+    );
+  }
+
+  return getBookingById(data.appointment_id);
 };

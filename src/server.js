@@ -2,10 +2,10 @@
 import "dotenv/config";
 
 import app from "./app.js";
-import { errorHandler } from "./middleware/errorHandler.js";
-import { initReminderScheduler } from "./jobs/reminderCron.js";
-
-app.use(errorHandler);
+import {
+  initReminderScheduler,
+  stopReminderScheduler
+} from "./jobs/reminderCron.js";
 
 const PORT = process.env.PORT || 5000;
 
@@ -18,5 +18,25 @@ const server = app.listen(PORT, () => {
 
   initReminderScheduler();
 });
+
+// Graceful shutdown
+const shutdown = (signal) => {
+  console.log(`${signal} received. Shutting down server...`);
+
+  stopReminderScheduler();
+
+  server.close((error) => {
+    if (error) {
+      console.error("Server shutdown error:", error);
+      process.exit(1);
+    }
+
+    console.log("HTTP server closed successfully.");
+    process.exit(0);
+  });
+};
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
 
 export default server;

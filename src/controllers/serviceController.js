@@ -1,4 +1,3 @@
-// controllers/serviceController.js
 
 import {
   createService,
@@ -19,7 +18,7 @@ export const createServiceController = async (req, res, next) => {
       data: service
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -32,7 +31,7 @@ export const getServicesController = async (req, res, next) => {
       data: services
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -45,7 +44,7 @@ export const getServiceByIdController = async (req, res, next) => {
       data: service
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -62,7 +61,7 @@ export const updateServiceController = async (req, res, next) => {
       data: service
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -83,7 +82,7 @@ export const updateServiceStatusController = async (
       data: service
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -97,6 +96,6 @@ export const deleteServiceController = async (req, res, next) => {
       data: service
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };

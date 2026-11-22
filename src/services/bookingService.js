@@ -16,12 +16,11 @@ const sendNotificationSafely = async (sendEmail, booking, action) => {
   try {
     await sendEmail(booking);
   } catch (error) {
-    console.error(
-      `${action} email failed for ${
-        booking.booking_reference || booking.id
-      }:`,
-      error.message
-    );
+    console.error(`${action} email failed`, {
+      bookingReference: booking?.booking_reference,
+      bookingId: booking?.id,
+      message: error.message
+    });
   }
 };
 
@@ -93,11 +92,10 @@ export const cancelBooking = async (
       patientEmail
     );
 
-  const cancellation =
-    await cancelBookingRepository(
-      bookingReference,
-      patientEmail
-    );
+  const cancellation = await cancelBookingRepository(
+    bookingReference,
+    patientEmail
+  );
 
   await sendNotificationSafely(
     sendCancellationConfirmationEmail,

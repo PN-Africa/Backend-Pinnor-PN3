@@ -1,14 +1,13 @@
 
 import { createClient } from "@supabase/supabase-js";
-import dotenv from "dotenv";
-
-dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase authentication environment variables");
+  throw new Error(
+    "Missing Supabase authentication environment variables: SUPABASE_URL and SUPABASE_ANON_KEY are required."
+  );
 }
 
 export const supabaseAuth = createClient(
@@ -17,7 +16,8 @@ export const supabaseAuth = createClient(
   {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
+      persistSession: false,
+      detectSessionInUrl: false
     }
   }
 );

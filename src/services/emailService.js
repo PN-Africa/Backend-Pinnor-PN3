@@ -25,13 +25,17 @@ const sendEmail = async ({ to, subject, html }) => {
     throw new Error("REMINDER_FROM_EMAIL is not configured.");
   }
 
-  if (!to) {
+  if (typeof to !== "string" || !to.trim()) {
     throw new Error("Recipient email address is required.");
+  }
+
+  if (!subject || !html) {
+    throw new Error("Email subject and content are required.");
   }
 
   const { data, error } = await resend.emails.send({
     from,
-    to,
+    to: to.trim(),
     subject,
     html
   });
@@ -40,13 +44,23 @@ const sendEmail = async ({ to, subject, html }) => {
     throw new Error(`Resend email failed: ${error.message}`);
   }
 
+  if (!data) {
+    throw new Error("Resend did not return email delivery details.");
+  }
+
   return data;
 };
 
 const formatDate = (date) => {
   if (!date) return "See your booking details";
 
-  return new Date(`${date}T12:00:00`).toLocaleDateString("en-NG", {
+  const parsed = new Date(`${date}T12:00:00`);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "See your booking details";
+  }
+
+  return parsed.toLocaleDateString("en-NG", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -57,7 +71,13 @@ const formatDate = (date) => {
 const formatTime = (value) => {
   if (!value) return "See your booking details";
 
-  return new Date(value).toLocaleTimeString("en-NG", {
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "See your booking details";
+  }
+
+  return parsed.toLocaleTimeString("en-NG", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,

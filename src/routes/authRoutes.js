@@ -42,7 +42,7 @@ const validateBody = (schema) => (req, res, next) => {
  * @swagger
  * tags:
  *   name: Authentication
- *   description: User registration, login, Google OAuth and authentication management
+ *   description: User registration, login and authentication management
  */
 
 /**
@@ -50,7 +50,6 @@ const validateBody = (schema) => (req, res, next) => {
  * /api/auth/register:
  *   post:
  *     summary: Register a new user
- *     description: Creates a new user account using Supabase Authentication.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -59,22 +58,30 @@ const validateBody = (schema) => (req, res, next) => {
  *           schema:
  *             type: object
  *             required:
+ *               - fullName
  *               - email
+ *               - phone
  *               - password
  *             properties:
+ *               fullName:
+ *                 type: string
+ *                 example: John Doe
  *               email:
  *                 type: string
  *                 format: email
- *                 example: admin@example.com
+ *                 example: john@example.com
+ *               phone:
+ *                 type: string
+ *                 example: "08012345678"
  *               password:
  *                 type: string
  *                 format: password
- *                 example: SecurePassword123
+ *                 minLength: 8
  *     responses:
  *       201:
- *         description: Registration successful. Email confirmation may be required.
+ *         description: Registration successful
  *       400:
- *         description: Registration failed or validation error
+ *         description: Validation or registration failed
  */
 
 /**
@@ -82,7 +89,6 @@ const validateBody = (schema) => (req, res, next) => {
  * /api/auth/login:
  *   post:
  *     summary: Log in a user
- *     description: Authenticates a user and returns their profile and session.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -97,11 +103,10 @@ const validateBody = (schema) => (req, res, next) => {
  *               email:
  *                 type: string
  *                 format: email
- *                 example: admin@example.com
+ *                 example: john@example.com
  *               password:
  *                 type: string
  *                 format: password
- *                 example: SecurePassword123
  *     responses:
  *       200:
  *         description: Login successful
@@ -118,11 +123,11 @@ const validateBody = (schema) => (req, res, next) => {
  * /api/auth/google:
  *   get:
  *     summary: Initiate Google login
- *     description: Generates a Google OAuth authentication URL through Supabase. The frontend should redirect the user to the returned URL.
+ *     description: Generates a Google OAuth URL through Supabase. The frontend redirects the user to the returned URL.
  *     tags: [Authentication]
  *     responses:
  *       200:
- *         description: Google authentication URL generated successfully
+ *         description: Google authentication URL generated
  *       400:
  *         description: Google authentication failed
  *       500:
@@ -134,7 +139,6 @@ const validateBody = (schema) => (req, res, next) => {
  * /api/auth/me:
  *   get:
  *     summary: Get current authenticated user
- *     description: Retrieves the profile of the currently authenticated user.
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
@@ -152,7 +156,6 @@ const validateBody = (schema) => (req, res, next) => {
  * /api/auth/verify-otp:
  *   post:
  *     summary: Verify signup email OTP
- *     description: Verifies a user's email using the signup OTP.
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -167,7 +170,7 @@ const validateBody = (schema) => (req, res, next) => {
  *               email:
  *                 type: string
  *                 format: email
- *                 example: admin@example.com
+ *                 example: john@example.com
  *               token:
  *                 type: string
  *                 example: "123456"
@@ -183,7 +186,6 @@ const validateBody = (schema) => (req, res, next) => {
  * /api/auth/logout:
  *   post:
  *     summary: Log out authenticated user
- *     description: Signs out the current user using their Bearer access token.
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
@@ -193,7 +195,7 @@ const validateBody = (schema) => (req, res, next) => {
  *       400:
  *         description: Logout failed
  *       401:
- *         description: Authentication token required
+ *         description: Authentication required
  */
 
 // Register
@@ -202,10 +204,10 @@ router.post("/register", validateBody(registerSchema), register);
 // Login
 router.post("/login", validateBody(loginSchema), login);
 
-// Google OAuth login
+// Google OAuth
 router.get("/google", googleLogin);
 
-// Get current authenticated user
+// Current authenticated user
 router.get("/me", requireAuth, getCurrentUser);
 
 // Verify signup OTP

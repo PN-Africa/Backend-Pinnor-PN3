@@ -1,48 +1,65 @@
+
 import { supabase } from "../config/supabase.js";
+
+const unauthorized = (res, error, message) => {
+  return res.status(401).json({
+    success: false,
+    error,
+    message
+  });
+};
+
+const verifyToken = async (token) => {
+  const {
+    data: { user },
+    error
+  } = await supabase.auth.getUser(token);
+
+  if (error || !user) {
+    return null;
+  }
+
+  return user;
+};
 
 export const requireAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        error: "UNAUTHORIZED",
-        message: "Authentication token is required"
-      });
+    if (!authHeader?.startsWith("Bearer ")) {
+      return unauthorized(
+        res,
+        "UNAUTHORIZED",
+        "Authentication token is required"
+      );
     }
 
     const token = authHeader.slice(7).trim();
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: "UNAUTHORIZED",
-        message: "Authentication token is required"
-      });
+      return unauthorized(
+        res,
+        "UNAUTHORIZED",
+        "Authentication token is required"
+      );
     }
 
-    const {
-      data: { user },
-      error
-    } = await supabase.auth.getUser(token);
+    const user = await verifyToken(token);
 
-    if (error || !user) {
-      return res.status(401).json({
-        success: false,
-        error: "INVALID_TOKEN",
-        message: "Invalid or expired authentication token"
-      });
+    if (!user) {
+      return unauthorized(
+        res,
+        "INVALID_TOKEN",
+        "Invalid or expired authentication token"
+      );
     }
 
     req.user = user;
-
-    next();
+    return next();
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
-
 
 export const optionalAuth = async (req, res, next) => {
   try {
@@ -54,52 +71,48 @@ export const optionalAuth = async (req, res, next) => {
     }
 
     if (!authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        error: "UNAUTHORIZED",
-        message: "Invalid authorization header"
-      });
+      return unauthorized(
+        res,
+        "UNAUTHORIZED",
+        "Invalid authorization header"
+      );
     }
 
     const token = authHeader.slice(7).trim();
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: "UNAUTHORIZED",
-        message: "Authentication token is required"
-      });
+      return unauthorized(
+        res,
+        "UNAUTHORIZED",
+        "Authentication token is required"
+      );
     }
 
-    const {
-      data: { user },
-      error
-    } = await supabase.auth.getUser(token);
+    const user = await verifyToken(token);
 
-    if (error || !user) {
-      return res.status(401).json({
-        success: false,
-        error: "INVALID_TOKEN",
-        message: "Invalid or expired authentication token"
-      });
+    if (!user) {
+      return unauthorized(
+        res,
+        "INVALID_TOKEN",
+        "Invalid or expired authentication token"
+      );
     }
 
     req.user = user;
-    next();
+    return next();
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
-
 
 export const requireAdmin = async (req, res, next) => {
   try {
     if (!req.user?.id) {
-      return res.status(401).json({
-        success: false,
-        error: "UNAUTHORIZED",
-        message: "Authentication is required"
-      });
+      return unauthorized(
+        res,
+        "UNAUTHORIZED",
+        "Authentication is required"
+      );
     }
 
     const { data: profile, error } = await supabase
@@ -112,15 +125,7 @@ export const requireAdmin = async (req, res, next) => {
       return next(error);
     }
 
-    if (!profile) {
-      return res.status(403).json({
-        success: false,
-        error: "FORBIDDEN",
-        message: "User profile not found"
-      });
-    }
-
-    if (profile.role !== "admin") {
+    if (!profile || profile.role !== "admin") {
       return res.status(403).json({
         success: false,
         error: "FORBIDDEN",
@@ -128,8 +133,8 @@ export const requireAdmin = async (req, res, next) => {
       });
     }
 
-    next();
+    return next();
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };

@@ -22,6 +22,36 @@ import { createBookingSchema } from "../validators/bookingValidators.js";
 
 const router = express.Router();
 
+const validateAppointmentId = (req, res, next) => {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  if (!uuidRegex.test(req.params.id)) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid appointment ID."
+    });
+  }
+
+  next();
+};
+
+const validateLookupQuery = (req, res, next) => {
+  const email = String(req.query.email || "").trim();
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!email || !emailRegex.test(email)) {
+    return res.status(400).json({
+      success: false,
+      message: "A valid patient email address is required."
+    });
+  }
+
+  req.query.email = email.toLowerCase();
+  next();
+};
+
 /**
  * @swagger
  * tags:
@@ -34,7 +64,7 @@ const router = express.Router();
  * /api/appointments:
  *   post:
  *     summary: Book an appointment
- *     description: Books an available appointment slot automatically on a first-come, first-served basis. No manual confirmation is required.
+ *     description: Books an available appointment slot automatically on a first-come, first-served basis.
  *     tags:
  *       - Appointments
  *     requestBody:
@@ -52,21 +82,16 @@ const router = express.Router();
  *               slotId:
  *                 type: string
  *                 format: uuid
- *                 description: ID of the selected availability slot
  *               patientName:
  *                 type: string
- *                 description: Patient's full name
  *               patientEmail:
  *                 type: string
  *                 format: email
- *                 description: Patient's email address
  *               patientPhone:
  *                 type: string
- *                 description: Patient's phone number
  *               patientMessage:
  *                 type: string
  *                 nullable: true
- *                 description: Optional message for the provider
  *     responses:
  *       201:
  *         description: Appointment booked successfully
@@ -86,24 +111,32 @@ router.post(
  * /api/appointments/lookup/{reference}:
  *   get:
  *     summary: Look up a guest appointment
- *     description: Retrieves limited appointment information using a booking reference. Authentication is not required.
+ *     description: Retrieves appointment information using the booking reference and patient email.
  *     tags:
  *       - Appointments
  *     parameters:
  *       - in: path
  *         name: reference
  *         required: true
- *         description: Appointment booking reference
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: email
  *     responses:
  *       200:
  *         description: Appointment retrieved successfully
+ *       400:
+ *         description: Invalid reference or email
  *       404:
  *         description: Appointment not found
  */
 router.get(
   "/lookup/:reference",
+  validateLookupQuery,
   lookupAppointmentController
 );
 
@@ -167,13 +200,14 @@ router.get(
  *       - in: path
  *         name: id
  *         required: true
- *         description: UUID of the appointment
  *         schema:
  *           type: string
  *           format: uuid
  *     responses:
  *       200:
  *         description: Appointment retrieved successfully
+ *       400:
+ *         description: Invalid appointment ID
  *       401:
  *         description: Authentication required
  *       403:
@@ -185,6 +219,7 @@ router.get(
   "/:id",
   requireAuth,
   requireAdmin,
+  validateAppointmentId,
   getAppointmentByIdController
 );
 
@@ -202,17 +237,18 @@ router.get(
  *       - in: path
  *         name: id
  *         required: true
- *         description: UUID of the appointment to cancel
  *         schema:
  *           type: string
  *           format: uuid
  *     responses:
  *       200:
  *         description: Appointment cancelled successfully
+ *       400:
+ *         description: Invalid appointment ID
  *       401:
  *         description: Authentication required
  *       403:
- *         description: Patient is not authorized to cancel this appointment
+ *         description: Patient is not authorized
  *       404:
  *         description: Appointment not found
  *       409:
@@ -221,6 +257,7 @@ router.get(
 router.patch(
   "/:id/my-cancel",
   requireAuth,
+  validateAppointmentId,
   cancelMyAppointmentController
 );
 
@@ -238,13 +275,14 @@ router.patch(
  *       - in: path
  *         name: id
  *         required: true
- *         description: UUID of the appointment to cancel
  *         schema:
  *           type: string
  *           format: uuid
  *     responses:
  *       200:
  *         description: Appointment cancelled successfully
+ *       400:
+ *         description: Invalid appointment ID
  *       401:
  *         description: Authentication required
  *       403:
@@ -258,6 +296,7 @@ router.patch(
   "/:id/cancel",
   requireAuth,
   requireAdmin,
+  validateAppointmentId,
   cancelAppointmentController
 );
 
@@ -275,13 +314,14 @@ router.patch(
  *       - in: path
  *         name: id
  *         required: true
- *         description: UUID of the appointment
  *         schema:
  *           type: string
  *           format: uuid
  *     responses:
  *       200:
  *         description: Appointment marked as completed
+ *       400:
+ *         description: Invalid appointment ID
  *       401:
  *         description: Authentication required
  *       403:
@@ -295,6 +335,7 @@ router.patch(
   "/:id/complete",
   requireAuth,
   requireAdmin,
+  validateAppointmentId,
   completeAppointmentController
 );
 

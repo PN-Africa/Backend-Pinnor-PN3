@@ -17,7 +17,10 @@ import {
 
 export const createBookingController = async (req, res, next) => {
   try {
-    const appointment = await createBooking(req.body);
+    const appointment = await createBooking({
+      ...req.body,
+      userId: req.user?.id || null
+    });
 
     try {
       await sendBookingConfirmationEmail(appointment);
@@ -47,7 +50,7 @@ export const getAppointmentsController = async (req, res, next) => {
       date: req.query.date
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: appointments
     });
@@ -85,21 +88,28 @@ export const lookupAppointmentController = async (req, res, next) => {
       .trim()
       .toUpperCase();
 
-    if (!reference) {
+    const email = String(req.query.email || "")
+      .trim()
+      .toLowerCase();
+
+    if (!reference || !email) {
       return res.status(400).json({
         success: false,
-        error: "MISSING_REFERENCE",
-        message: "Booking reference is required"
+        error: "MISSING_LOOKUP_DETAILS",
+        message: "Booking reference and patient email are required"
       });
     }
 
-    const appointment = await getAppointmentByReference(reference);
+    const appointment = await getAppointmentByReference(
+      reference,
+      email
+    );
 
     if (!appointment) {
       return res.status(404).json({
         success: false,
         error: "APPOINTMENT_NOT_FOUND",
-        message: "No appointment found with that booking reference"
+        message: "No appointment found with those details"
       });
     }
 
@@ -123,7 +133,7 @@ export const getAppointmentByIdController = async (req, res, next) => {
   try {
     const appointment = await getAppointmentById(req.params.id);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: appointment
     });
@@ -145,7 +155,7 @@ export const cancelAppointmentController = async (req, res, next) => {
       );
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Appointment cancelled successfully",
       data: appointment
@@ -195,7 +205,7 @@ export const completeAppointmentController = async (req, res, next) => {
   try {
     const appointment = await completeAppointment(req.params.id);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Appointment marked as completed",
       data: appointment

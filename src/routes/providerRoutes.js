@@ -1,4 +1,5 @@
 import express from "express";
+import { z } from "zod";
 
 import {
   getProvidersController,
@@ -10,25 +11,46 @@ import {
 } from "../controllers/providerController.js";
 
 import {
-  requireAuth,
-  requireAdmin
-} from "../middleware/auth.js";
-
-import { validate } from "../middleware/validate.js";
-
-import {
   createProviderSchema,
   updateProviderSchema,
-  providerStatusSchema
+  updateProviderStatusSchema
 } from "../validators/providerValidators.js";
 
+import { validate } from "../middleware/validate.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.js";
+
 const router = express.Router();
+
+const providerIdSchema = z.string().uuid({
+  message: "Invalid provider ID"
+});
+
+const validateProviderId = (req, res, next) => {
+  const result = providerIdSchema.safeParse(req.params.id);
+
+  if (!result.success) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid provider ID",
+      errors: result.error.flatten()
+    });
+  }
+
+  next();
+};
+
+/**
+ * @swagger
+ * tags:
+ *   - name: Providers
+ *     description: Provider management
+ */
 
 /**
  * @swagger
  * /api/providers:
  *   get:
- *     summary: Get all active providers
+ *     summary: Get active providers
  *     tags: [Providers]
  *     responses:
  *       200:
@@ -52,10 +74,16 @@ router.get("/", getProvidersController);
  *     responses:
  *       200:
  *         description: Provider retrieved successfully
+ *       400:
+ *         description: Invalid provider ID
  *       404:
  *         description: Provider not found
  */
-router.get("/:id", getProviderByIdController);
+router.get(
+  "/:id",
+  validateProviderId,
+  getProviderByIdController
+);
 
 /**
  * @swagger
@@ -71,13 +99,38 @@ router.get("/:id", getProviderByIdController);
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - userId
+ *               - name
+ *               - specialty
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 format: uuid
+ *               name:
+ *                 type: string
+ *               specialty:
+ *                 type: string
+ *               bio:
+ *                 type: string
+ *                 nullable: true
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               phone:
+ *                 type: string
+ *               status:
+ *                 type: string
+ *                 enum: [active, inactive]
  *     responses:
  *       201:
  *         description: Provider created successfully
+ *       400:
+ *         description: Validation failed
  *       401:
- *         description: Authentication required
+ *         description: Unauthorized
  *       403:
- *         description: Admin privileges required
+ *         description: Admin access required
  */
 router.post(
   "/",
@@ -91,7 +144,7 @@ router.post(
  * @swagger
  * /api/providers/{id}:
  *   patch:
- *     summary: Update a provider
+ *     summary: Update provider details
  *     tags: [Providers]
  *     security:
  *       - bearerAuth: []
@@ -105,15 +158,20 @@ router.post(
  *     responses:
  *       200:
  *         description: Provider updated successfully
+ *       400:
+ *         description: Invalid ID or request body
  *       401:
- *         description: Authentication required
+ *         description: Unauthorized
  *       403:
- *         description: Admin privileges required
+ *         description: Admin access required
+ *       404:
+ *         description: Provider not found
  */
 router.patch(
   "/:id",
   requireAuth,
   requireAdmin,
+  validateProviderId,
   validate(updateProviderSchema),
   updateProviderController
 );
@@ -136,16 +194,21 @@ router.patch(
  *     responses:
  *       200:
  *         description: Provider status updated successfully
+ *       400:
+ *         description: Invalid provider ID or status
  *       401:
- *         description: Authentication required
+ *         description: Unauthorized
  *       403:
- *         description: Admin privileges required
+ *         description: Admin access required
+ *       404:
+ *         description: Provider not found
  */
 router.patch(
   "/:id/status",
   requireAuth,
   requireAdmin,
-  validate(providerStatusSchema),
+  validateProviderId,
+  validate(updateProviderStatusSchema),
   updateProviderStatusController
 );
 
@@ -167,15 +230,20 @@ router.patch(
  *     responses:
  *       200:
  *         description: Provider deleted successfully
+ *       400:
+ *         description: Invalid provider ID
  *       401:
- *         description: Authentication required
+ *         description: Unauthorized
  *       403:
- *         description: Admin privileges required
+ *         description: Admin access required
+ *       404:
+ *         description: Provider not found
  */
 router.delete(
   "/:id",
   requireAuth,
   requireAdmin,
+  validateProviderId,
   deleteProviderController
 );
 
