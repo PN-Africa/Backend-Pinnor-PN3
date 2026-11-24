@@ -39,6 +39,20 @@ export const getProviders = async () => {
   return data;
 };
 
+
+export const getAllProviders = async () => {
+  const { data, error } = await supabase
+    .from("providers")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return data;
+};
+
+
+
 export const getProviderById = async (id) => {
   const { data, error } = await supabase
     .from("providers")

@@ -1,8 +1,10 @@
+
 import express from "express";
 import { z } from "zod";
 
 import {
   getProvidersController,
+  getAllProvidersController,
   getProviderByIdController,
   createProviderController,
   updateProviderController,
@@ -54,9 +56,33 @@ const validateProviderId = (req, res, next) => {
  *     tags: [Providers]
  *     responses:
  *       200:
- *         description: Providers retrieved successfully
+ *         description: Active providers retrieved successfully
  */
 router.get("/", getProvidersController);
+
+/**
+ * @swagger
+ * /api/providers/admin/all:
+ *   get:
+ *     summary: Get all providers including inactive providers
+ *     description: Admin-only endpoint for managing and reactivating providers.
+ *     tags: [Providers]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All providers retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
+ */
+router.get(
+  "/admin/all",
+  requireAuth,
+  requireAdmin,
+  getAllProvidersController
+);
 
 /**
  * @swagger
@@ -100,9 +126,10 @@ router.get(
  *           schema:
  *             type: object
  *             required:
- *               - userId
  *               - name
  *               - specialty
+ *               - email
+ *               - phone
  *             properties:
  *               userId:
  *                 type: string
@@ -180,7 +207,7 @@ router.patch(
  * @swagger
  * /api/providers/{id}/status:
  *   patch:
- *     summary: Update provider status
+ *     summary: Activate or deactivate a provider
  *     tags: [Providers]
  *     security:
  *       - bearerAuth: []
@@ -191,6 +218,18 @@ router.patch(
  *         schema:
  *           type: string
  *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [active, inactive]
  *     responses:
  *       200:
  *         description: Provider status updated successfully
@@ -238,6 +277,8 @@ router.patch(
  *         description: Admin access required
  *       404:
  *         description: Provider not found
+ *       409:
+ *         description: Provider has associated records and cannot be deleted
  */
 router.delete(
   "/:id",

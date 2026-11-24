@@ -2,6 +2,7 @@
 import {
   createProvider,
   getProviders,
+  getAllProviders,
   getProviderById,
   updateProvider,
   updateProviderStatus,
@@ -22,9 +23,24 @@ export const createProviderController = async (req, res, next) => {
   }
 };
 
+// Public listing: active providers only.
 export const getProvidersController = async (req, res, next) => {
   try {
     const providers = await getProviders();
+
+    return res.status(200).json({
+      success: true,
+      data: providers
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// Admin listing: all providers, including inactive providers.
+export const getAllProvidersController = async (req, res, next) => {
+  try {
+    const providers = await getAllProviders();
 
     return res.status(200).json({
       success: true,
