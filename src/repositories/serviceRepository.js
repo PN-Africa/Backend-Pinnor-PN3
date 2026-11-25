@@ -39,6 +39,18 @@ export const getServices = async () => {
   return data;
 };
 
+// Admin listing: includes active and inactive services.
+export const getAllServices = async () => {
+  const { data, error } = await supabase
+    .from("services")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  return data;
+};
+
 export const getServiceById = async (id) => {
   const { data, error } = await supabase
     .from("services")

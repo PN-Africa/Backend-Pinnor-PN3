@@ -2,6 +2,7 @@
 import {
   createService,
   getServices,
+  getAllServices,
   getServiceById,
   updateService,
   updateServiceStatus,
@@ -22,9 +23,24 @@ export const createServiceController = async (req, res, next) => {
   }
 };
 
+// Public listing: active services only.
 export const getServicesController = async (req, res, next) => {
   try {
     const services = await getServices();
+
+    return res.status(200).json({
+      success: true,
+      data: services
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// Admin listing: all services, including inactive ones.
+export const getAllServicesController = async (req, res, next) => {
+  try {
+    const services = await getAllServices();
 
     return res.status(200).json({
       success: true,

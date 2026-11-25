@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import {
   getServicesController,
+  getAllServicesController,
   getServiceByIdController,
   createServiceController,
   updateServiceController,
@@ -52,9 +53,32 @@ const validateServiceId = (req, res, next) => {
  *     tags: [Services]
  *     responses:
  *       200:
- *         description: Services retrieved successfully
+ *         description: Active services retrieved successfully
  */
 router.get("/", getServicesController);
+
+/**
+ * @swagger
+ * /api/services/admin/all:
+ *   get:
+ *     summary: Get all services including inactive services (Admin)
+ *     tags: [Services]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All services retrieved successfully
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Admin privileges required
+ */
+router.get(
+  "/admin/all",
+  requireAuth,
+  requireAdmin,
+  getAllServicesController
+);
 
 /**
  * @swagger
@@ -147,7 +171,7 @@ router.patch(
  * @swagger
  * /api/services/{id}/status:
  *   patch:
- *     summary: Update service status
+ *     summary: Activate or deactivate a service
  *     tags: [Services]
  *     security:
  *       - bearerAuth: []
