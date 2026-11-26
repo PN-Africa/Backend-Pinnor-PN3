@@ -4,6 +4,7 @@ import express from "express";
 import {
   createAvailabilitySlotController,
   getAvailabilitySlotsController,
+  getAllAvailabilitySlotsController,
   getAvailabilitySlotByIdController,
   updateAvailabilitySlotController,
   deleteAvailabilitySlotController,
@@ -45,6 +46,29 @@ const router = express.Router();
  *         description: Availability slots retrieved successfully
  */
 router.get("/", getAvailabilitySlotsController);
+
+/**
+ * @swagger
+ * /api/availability/admin/all:
+ *   get:
+ *     summary: Get all availability slots for the admin calendar
+ *     tags: [Availability]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All availability slots retrieved successfully
+ *       401:
+ *         description: Authentication required
+ *       403:
+ *         description: Admin privileges required
+ */
+router.get(
+  "/admin/all",
+  requireAuth,
+  requireAdmin,
+  getAllAvailabilitySlotsController
+);
 
 /**
  * @swagger

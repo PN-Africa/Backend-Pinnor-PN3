@@ -150,6 +150,36 @@ export const getAvailabilitySlots = async ({
   return data;
 };
 
+
+export const getAllAvailabilitySlots = async ({
+  providerId,
+  serviceId,
+  date
+} = {}) => {
+  let query = supabase
+    .from("availability_slots")
+    .select(
+      "id, provider_id, service_id, start_time, end_time, status, is_published, created_at"
+    )
+    .order("start_time", { ascending: true });
+
+  if (providerId) query = query.eq("provider_id", providerId);
+  if (serviceId) query = query.eq("service_id", serviceId);
+
+  if (date) {
+    const range = validateDate(date);
+    query = query
+      .gte("start_time", range.start)
+      .lt("start_time", range.end);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  return data;
+};
+
+
 export const getAvailabilitySlotById = async (id) => {
   const { data, error } = await supabase
     .from("availability_slots")
