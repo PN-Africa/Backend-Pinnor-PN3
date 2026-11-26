@@ -108,6 +108,44 @@ export const updateServiceStatus = async (id, status) => {
 };
 
 export const deleteService = async (id) => {
+  const [appointmentsResult, slotsResult] = await Promise.all([
+    supabase
+      .from("appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("service_id", id),
+
+    supabase
+      .from("availability_slots")
+      .select("id", { count: "exact", head: true })
+      .eq("service_id", id)
+  ]);
+
+  if (appointmentsResult.error) {
+    throw appointmentsResult.error;
+  }
+
+  if (slotsResult.error) {
+    throw slotsResult.error;
+  }
+
+  const appointmentCount = appointmentsResult.count || 0;
+  const slotCount = slotsResult.count || 0;
+
+  if (appointmentCount > 0 || slotCount > 0) {
+    const error = new Error(
+      "This service cannot be deleted because it has existing appointments or availability slots. Deactivate it instead."
+    );
+
+    error.statusCode = 409;
+    error.code = "SERVICE_IN_USE";
+    error.details = {
+      appointmentCount,
+      slotCount
+    };
+
+    throw error;
+  }
+
   const { data, error } = await supabase
     .from("services")
     .delete()

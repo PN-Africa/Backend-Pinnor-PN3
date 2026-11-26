@@ -112,6 +112,15 @@ export const deleteServiceController = async (req, res, next) => {
       data: service
     });
   } catch (error) {
+    if (error.code === "SERVICE_IN_USE") {
+      return res.status(409).json({
+        success: false,
+        error: error.code,
+        message: error.message,
+        details: error.details
+      });
+    }
+
     return next(error);
   }
 };
