@@ -8,6 +8,7 @@ import {
   getProviderByIdController,
   createProviderController,
   updateProviderController,
+  uploadProviderImageController,
   updateProviderStatusController,
   deleteProviderController
 } from "../controllers/providerController.js";
@@ -20,6 +21,7 @@ import {
 
 import { validate } from "../middleware/validate.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
+import { uploadProviderImage } from "../middleware/providerImageUpload.js";
 
 const router = express.Router();
 
@@ -65,23 +67,67 @@ router.get("/", getProvidersController);
  * /api/providers/admin/all:
  *   get:
  *     summary: Get all providers including inactive providers
- *     description: Admin-only endpoint for managing and reactivating providers.
  *     tags: [Providers]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: All providers retrieved successfully
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Admin access required
  */
 router.get(
   "/admin/all",
   requireAuth,
   requireAdmin,
   getAllProvidersController
+);
+
+/**
+ * @swagger
+ * /api/providers/{id}/image:
+ *   post:
+ *     summary: Upload a provider profile image
+ *     description: Uploads an image to Supabase Storage and saves its public URL to the provider record.
+ *     tags: [Providers]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - image
+ *             properties:
+ *               image:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Provider image uploaded successfully
+ *       400:
+ *         description: Invalid image or missing file
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Admin access required
+ *       413:
+ *         description: Image exceeds 5MB
+ */
+router.post(
+  "/:id/image",
+  requireAuth,
+  requireAdmin,
+  validateProviderId,
+  uploadProviderImage,
+  uploadProviderImageController
 );
 
 /**
@@ -172,12 +218,6 @@ router.get(
  *     responses:
  *       201:
  *         description: Provider created successfully
- *       400:
- *         description: Validation failed
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Admin access required
  */
 router.post(
   "/",
@@ -192,7 +232,6 @@ router.post(
  * /api/providers/{id}:
  *   patch:
  *     summary: Update provider details
- *     description: Updates provider information including address, description, website and map coordinates.
  *     tags: [Providers]
  *     security:
  *       - bearerAuth: []
@@ -237,25 +276,13 @@ router.post(
  *                 nullable: true
  *               latitude:
  *                 type: number
- *                 minimum: -90
- *                 maximum: 90
  *                 nullable: true
  *               longitude:
  *                 type: number
- *                 minimum: -180
- *                 maximum: 180
  *                 nullable: true
  *     responses:
  *       200:
  *         description: Provider updated successfully
- *       400:
- *         description: Invalid ID or request body
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Admin access required
- *       404:
- *         description: Provider not found
  */
 router.patch(
   "/:id",
@@ -296,14 +323,6 @@ router.patch(
  *     responses:
  *       200:
  *         description: Provider status updated successfully
- *       400:
- *         description: Invalid provider ID or status
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Admin access required
- *       404:
- *         description: Provider not found
  */
 router.patch(
   "/:id/status",
@@ -332,14 +351,6 @@ router.patch(
  *     responses:
  *       200:
  *         description: Provider deleted successfully
- *       400:
- *         description: Invalid provider ID
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Admin access required
- *       404:
- *         description: Provider not found
  *       409:
  *         description: Provider has associated records and cannot be deleted
  */

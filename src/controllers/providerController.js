@@ -9,6 +9,8 @@ import {
   deleteProvider
 } from "../repositories/providerRepository.js";
 
+import { uploadProviderImageToStorage } from "../services/providerImageService.js";
+
 export const createProviderController = async (req, res, next) => {
   try {
     const provider = await createProvider(req.body);
@@ -23,7 +25,6 @@ export const createProviderController = async (req, res, next) => {
   }
 };
 
-// Public listing: active providers only.
 export const getProvidersController = async (req, res, next) => {
   try {
     const providers = await getProviders();
@@ -37,7 +38,6 @@ export const getProvidersController = async (req, res, next) => {
   }
 };
 
-// Admin listing: all providers, including inactive providers.
 export const getAllProvidersController = async (req, res, next) => {
   try {
     const providers = await getAllProviders();
@@ -66,14 +66,39 @@ export const getProviderByIdController = async (req, res, next) => {
 
 export const updateProviderController = async (req, res, next) => {
   try {
-    const provider = await updateProvider(
-      req.params.id,
-      req.body
-    );
+    const provider = await updateProvider(req.params.id, req.body);
 
     return res.status(200).json({
       success: true,
       message: "Provider updated successfully",
+      data: provider
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+export const uploadProviderImageController = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a provider image to upload"
+      });
+    }
+
+    const { imageUrl } = await uploadProviderImageToStorage(
+      req.file,
+      req.params.id
+    );
+
+    const provider = await updateProvider(req.params.id, {
+      imageUrl
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Provider image uploaded successfully",
       data: provider
     });
   } catch (error) {
