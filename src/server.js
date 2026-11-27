@@ -6,6 +6,7 @@ import {
   initReminderScheduler,
   stopReminderScheduler
 } from "./jobs/reminderCron.js";
+import { verifyEmailConnection } from "./config/email.js";
 
 const PORT = process.env.PORT || 5000;
 
@@ -17,6 +18,14 @@ const server = app.listen(PORT, () => {
   );
 
   initReminderScheduler();
+
+  verifyEmailConnection()
+    .then(() => {
+      console.log("Google SMTP connection verified successfully.");
+    })
+    .catch((error) => {
+      console.error("Google SMTP connection failed:", error.message);
+    });
 });
 
 // Graceful shutdown

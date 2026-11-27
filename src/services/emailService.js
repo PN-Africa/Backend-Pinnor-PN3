@@ -1,5 +1,5 @@
 
-import { resend } from "../config/email.js";
+import { transporter } from "../config/email.js";
 
 const escapeHtml = (value = "") =>
   String(value).replace(/[&<>"']/g, (character) => {
@@ -15,8 +15,8 @@ const escapeHtml = (value = "") =>
   });
 
 const sendEmail = async ({ to, subject, html }) => {
-  if (!resend) {
-    throw new Error("RESEND_API_KEY is not configured.");
+  if (!transporter) {
+    throw new Error("Google SMTP is not configured.");
   }
 
   const from = process.env.REMINDER_FROM_EMAIL;
@@ -33,22 +33,25 @@ const sendEmail = async ({ to, subject, html }) => {
     throw new Error("Email subject and content are required.");
   }
 
-  const { data, error } = await resend.emails.send({
-    from,
-    to: to.trim(),
-    subject,
-    html
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: {
+        name: "Pinnor PNA 3",
+        address: from
+      },
+      to: to.trim(),
+      subject,
+      html
+    });
 
-  if (error) {
-    throw new Error(`Resend email failed: ${error.message}`);
+    if (!info.messageId) {
+      throw new Error("SMTP did not return a message ID.");
+    }
+
+    return info;
+  } catch (error) {
+    throw new Error(`Google SMTP email failed: ${error.message}`);
   }
-
-  if (!data) {
-    throw new Error("Resend did not return email delivery details.");
-  }
-
-  return data;
 };
 
 const formatDate = (date) => {
