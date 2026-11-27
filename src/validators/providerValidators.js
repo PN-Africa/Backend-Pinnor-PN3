@@ -31,6 +31,53 @@ const bioSchema = z.string()
   .nullable()
   .optional();
 
+const addressSchema = z.string()
+  .trim()
+  .max(500, {
+    message: "Address cannot exceed 500 characters"
+  })
+  .nullable()
+  .optional();
+
+const descriptionSchema = z.string()
+  .trim()
+  .max(3000, {
+    message: "Description cannot exceed 3000 characters"
+  })
+  .nullable()
+  .optional();
+
+const websiteSchema = z.string()
+  .trim()
+  .url({
+    message: "Invalid website URL"
+  })
+  .max(500, {
+    message: "Website URL cannot exceed 500 characters"
+  })
+  .nullable()
+  .optional();
+
+const latitudeSchema = z.number()
+  .min(-90, {
+    message: "Latitude must be between -90 and 90"
+  })
+  .max(90, {
+    message: "Latitude must be between -90 and 90"
+  })
+  .nullable()
+  .optional();
+
+const longitudeSchema = z.number()
+  .min(-180, {
+    message: "Longitude must be between -180 and 180"
+  })
+  .max(180, {
+    message: "Longitude must be between -180 and 180"
+  })
+  .nullable()
+  .optional();
+
 const emailSchema = z.string()
   .trim()
   .email({
@@ -57,6 +104,11 @@ export const createProviderSchema = z.object({
   bio: bioSchema,
   email: emailSchema,
   phone: phoneSchema,
+  address: addressSchema,
+  description: descriptionSchema,
+  website: websiteSchema,
+  latitude: latitudeSchema,
+  longitude: longitudeSchema,
   status: z.enum(["active", "inactive"]).default("active")
 });
 
@@ -66,7 +118,12 @@ export const updateProviderSchema = z.object({
   specialty: specialtySchema.optional(),
   bio: bioSchema,
   email: emailSchema.optional(),
-  phone: phoneSchema.optional()
+  phone: phoneSchema.optional(),
+  address: addressSchema,
+  description: descriptionSchema,
+  website: websiteSchema,
+  latitude: latitudeSchema,
+  longitude: longitudeSchema
 }).refine(
   (data) => Object.keys(data).length > 0,
   {

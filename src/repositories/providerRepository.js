@@ -4,13 +4,36 @@ import { supabase } from "../config/supabase.js";
 const mapProviderFields = (providerData) => {
   const {
     userId,
+    imageUrl,
     ...fields
   } = providerData;
 
-  return {
-    ...fields,
-    ...(userId !== undefined ? { user_id: userId } : {})
+  const mappedFields = {};
+
+  const fieldMap = {
+    name: "name",
+    specialty: "specialty",
+    bio: "bio",
+    email: "email",
+    phone: "phone",
+    status: "status",
+    address: "address",
+    description: "description",
+    website: "website",
+    latitude: "latitude",
+    longitude: "longitude"
   };
+
+  for (const [key, column] of Object.entries(fieldMap)) {
+    if (fields[key] !== undefined) {
+      mappedFields[column] = fields[key];
+    }
+  }
+
+  if (userId !== undefined) mappedFields.user_id = userId;
+  if (imageUrl !== undefined) mappedFields.image_url = imageUrl;
+
+  return mappedFields;
 };
 
 export const createProvider = async (providerData) => {
@@ -23,7 +46,6 @@ export const createProvider = async (providerData) => {
     .single();
 
   if (error) throw error;
-
   return data;
 };
 
@@ -35,10 +57,8 @@ export const getProviders = async () => {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-
   return data;
 };
-
 
 export const getAllProviders = async () => {
   const { data, error } = await supabase
@@ -47,11 +67,8 @@ export const getAllProviders = async () => {
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-
   return data;
 };
-
-
 
 export const getProviderById = async (id) => {
   const { data, error } = await supabase
@@ -61,7 +78,6 @@ export const getProviderById = async (id) => {
     .single();
 
   if (error) throw error;
-
   return data;
 };
 
@@ -76,7 +92,6 @@ export const updateProvider = async (id, updates) => {
     .single();
 
   if (error) throw error;
-
   return data;
 };
 
@@ -89,7 +104,6 @@ export const updateProviderStatus = async (id, status) => {
     .single();
 
   if (error) throw error;
-
   return data;
 };
 
@@ -150,6 +164,5 @@ export const deleteProvider = async (id) => {
     .single();
 
   if (error) throw error;
-
   return data;
 };

@@ -146,6 +146,26 @@ router.get(
  *                 format: email
  *               phone:
  *                 type: string
+ *               address:
+ *                 type: string
+ *                 nullable: true
+ *               description:
+ *                 type: string
+ *                 nullable: true
+ *               website:
+ *                 type: string
+ *                 format: uri
+ *                 nullable: true
+ *               latitude:
+ *                 type: number
+ *                 minimum: -90
+ *                 maximum: 90
+ *                 nullable: true
+ *               longitude:
+ *                 type: number
+ *                 minimum: -180
+ *                 maximum: 180
+ *                 nullable: true
  *               status:
  *                 type: string
  *                 enum: [active, inactive]
@@ -172,6 +192,7 @@ router.post(
  * /api/providers/{id}:
  *   patch:
  *     summary: Update provider details
+ *     description: Updates provider information including address, description, website and map coordinates.
  *     tags: [Providers]
  *     security:
  *       - bearerAuth: []
@@ -182,6 +203,48 @@ router.post(
  *         schema:
  *           type: string
  *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 format: uuid
+ *               name:
+ *                 type: string
+ *               specialty:
+ *                 type: string
+ *               bio:
+ *                 type: string
+ *                 nullable: true
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               phone:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *                 nullable: true
+ *               description:
+ *                 type: string
+ *                 nullable: true
+ *               website:
+ *                 type: string
+ *                 format: uri
+ *                 nullable: true
+ *               latitude:
+ *                 type: number
+ *                 minimum: -90
+ *                 maximum: 90
+ *                 nullable: true
+ *               longitude:
+ *                 type: number
+ *                 minimum: -180
+ *                 maximum: 180
+ *                 nullable: true
  *     responses:
  *       200:
  *         description: Provider updated successfully
