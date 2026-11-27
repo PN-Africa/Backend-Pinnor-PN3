@@ -12,16 +12,16 @@ import {
   sendCancellationConfirmationEmail
 } from "./emailService.js";
 
-const sendNotificationSafely = async (sendEmail, booking, action) => {
-  try {
-    await sendEmail(booking);
-  } catch (error) {
-    console.error(`${action} email failed`, {
-      bookingReference: booking?.booking_reference,
-      bookingId: booking?.id,
-      message: error.message
+const sendNotificationSafely = (sendEmail, booking, action) => {
+  Promise.resolve()
+    .then(() => sendEmail(booking))
+    .catch((error) => {
+      console.error(`${action} email failed`, {
+        bookingReference: booking?.booking_reference,
+        bookingId: booking?.id,
+        message: error.message
+      });
     });
-  }
 };
 
 export const createBooking = async (
@@ -43,7 +43,7 @@ export const createBooking = async (
     userId
   });
 
-  await sendNotificationSafely(
+  sendNotificationSafely(
     sendBookingConfirmationEmail,
     booking,
     "Booking confirmation"
@@ -73,7 +73,7 @@ export const rescheduleBooking = async (
     newSlotId
   );
 
-  await sendNotificationSafely(
+  sendNotificationSafely(
     sendRescheduleConfirmationEmail,
     booking,
     "Rescheduling confirmation"
@@ -97,7 +97,7 @@ export const cancelBooking = async (
     patientEmail
   );
 
-  await sendNotificationSafely(
+  sendNotificationSafely(
     sendCancellationConfirmationEmail,
     bookingBeforeCancellation,
     "Cancellation confirmation"
